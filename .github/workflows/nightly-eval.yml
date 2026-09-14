@@ -1,0 +1,47 @@
+name: Nightly groundedness eval
+
+on:
+  schedule:
+    # 03:30 UTC daily — after the US evening, before the EU workday
+    - cron: "30 3 * * *"
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+jobs:
+  eval:
+    name: Groundedness eval (-m eval)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          # bge-small embeddings + ms-marco MiniLM reranker (~100 MB total)
+          path: ~/.cache/huggingface
+          key: hf-models-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: hf-models-
+
+      - name: Run groundedness eval
+        env:
+          # Hermetic: temp DB/vector store, mock provider; no API keys needed.
+          LLM_PROVIDER: mock
+          # Keras 3 breaks transformers' optional TF backend; force the torch path
+          USE_TF: "0"
+        run: python -m pytest -m eval -q
+
+      - name: Keep eval report on failure
+        if: failure()
+        run: python -m tests.eval.runner --show-all

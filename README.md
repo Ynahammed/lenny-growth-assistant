@@ -84,6 +84,10 @@ documented `hxc_segment` case: jargon-only phrasings can land ~0.02 below the re
 (lowering the gate would break off-topic refusal; adding context to the query fixes it).
 Re-run the eval after any retrieval, embedding-model, or cutoff change.
 
+A nightly GitHub Actions job (`.github/workflows/nightly-eval.yml`, 03:30 UTC, also
+manually triggerable) runs the suite against `main` so retrieval regressions surface
+automatically; on failure it re-runs the runner with `--show-all` to print the full report.
+
 ## Provider configuration
 
 Configure in `backend/.env` (never commit this file). Current model defaults reflect vendor
