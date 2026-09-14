@@ -24,6 +24,12 @@ with automatic model-retirement fallback and per-provider telemetry.
   and token estimates
 - **Conversation management** — persistent sessions, per-session delete with undo, bulk
   clear-all, auto-titling from the first message
+- **Metadata filtering** — constrain retrieval to a specific guest or episode via UI chips;
+  user-pinned filters override whatever the LLM guesses
+- **Query contextualization** — vague follow-ups ("what about retention?") are rewritten with
+  conversation context before embedding; self-contained questions skip the rewrite
+- **Chocolate Truffle themes** — dark cocoa and cream light mode from one palette, toggled in
+  the sidebar and persisted per browser
 
 ## Quick start
 
