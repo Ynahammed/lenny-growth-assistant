@@ -10,53 +10,67 @@ from app.agents.tools.ship30_essay import execute_ship30_essay
 
 
 class TestRetrieveTool:
-    def test_returns_chunks_with_metadata(self):
+    def test_returns_chunks_with_both_scores(self):
         result = execute_retrieve("product market fit survey", top_k=3)
         assert result["chunk_count"] > 0
         chunk = result["chunks"][0]
-        for key in ("chunk_id", "guest", "episode_title", "excerpt", "relevance_score"):
+        for key in ("chunk_id", "guest", "episode_title", "excerpt", "relevance_score", "retrieval_score"):
             assert key in chunk
+        assert 0.0 <= chunk["retrieval_score"] <= 1.0
         assert 0.0 <= chunk["relevance_score"] <= 1.0
 
     def test_respects_top_k(self):
-        result = execute_retrieve("retention", top_k=2)
+        result = execute_retrieve("growth loops", top_k=2)
         assert result["chunk_count"] <= 2
 
-    def test_out_of_domain_query_refused_by_cutoff(self):
-        # The retriever now drops below-cutoff chunks; grounding refusal is
-        # enforced at retrieval time, not left to LLM vibes.
+    def test_out_of_domain_query_refused(self):
+        # The cosine gate drops far-below-threshold candidates; grounding
+        # refusal is enforced at retrieval time, not left to LLM vibes.
         result = execute_retrieve("sourdough bread recipe", top_k=1)
         assert result["chunk_count"] == 0
         assert result.get("no_relevant_evidence") is True
 
 
 class TestRelevanceCutoff:
+    """Gate on bge cosine (topical admission), rerank for ordering."""
+
     def test_off_topic_query_refused(self):
-        # "sourdough" scores ~0.14 in the live corpus, far below the 0.30 cutoff.
+        # bge cosine: off-topic queries stay under ~0.58; the default gate is 0.62.
         result = execute_retrieve("sourdough bread recipe", top_k=4)
         assert result["chunk_count"] == 0
         assert result["chunks"] == []
         assert result["no_relevant_evidence"] is True
 
-    def test_on_topic_query_unaffected(self):
-        # PMF queries score ~0.66 at the top — well clear of the cutoff.
-        result = execute_retrieve("product market fit survey", top_k=3)
-        assert result["chunk_count"] > 0
+    def test_on_topic_query_passes_gate(self):
+        result = execute_retrieve("growth loops vs funnels activation", top_k=4)
+        assert result["chunk_count"] >= 3
         assert "no_relevant_evidence" not in result
-        assert all(c["relevance_score"] >= 0.30 for c in result["chunks"])
+        assert all(c["retrieval_score"] >= 0.62 for c in result["chunks"])
+
+    def test_borderline_growth_query_not_refused(self):
+        # churn/retention phrasing scores ~0.69 on bge cosine — must clear the
+        # gate even though the cross-encoder scores its excerpts low.
+        result = execute_retrieve("how do I reduce churn in my SaaS funnel", top_k=4)
+        assert result["chunk_count"] >= 3
 
     def test_cutoff_zero_restores_legacy_nearest_neighbor(self):
         result = execute_retrieve("sourdough bread recipe", top_k=2, relevance_cutoff=0.0)
         assert result["chunk_count"] == 2
         assert "no_relevant_evidence" not in result
 
-    def test_partial_filter_keeps_strong_chunks_only(self):
-        # Growth-loops query returns mixed scores (0.75 ... 0.47) — nothing is
-        # dropped; verify scores remain sorted descending.
-        result = execute_retrieve("growth loops vs funnels activation", top_k=4)
+    def test_reranker_orders_answer_bearing_chunks_first(self):
+        result = execute_retrieve("How did Rahul Vohra measure product-market fit?", top_k=4)
         scores = [c["relevance_score"] for c in result["chunks"]]
         assert scores == sorted(scores, reverse=True)
-        assert "no_relevant_evidence" not in result
+
+    def test_rerank_disabled_falls_back_to_cosine_ordering(self, monkeypatch):
+        from app.agents.tools import retrieve as retrieve_mod
+        monkeypatch.setattr(retrieve_mod.settings, "RERANK_ENABLED", False)
+        result = retrieve_mod.execute_retrieve("growth loops vs funnels activation", top_k=4)
+        assert result["chunk_count"] >= 3
+        # Without the reranker, relevance_score is the cosine retrieval score.
+        scores = [c["relevance_score"] for c in result["chunks"]]
+        assert scores == sorted(scores, reverse=True)
 
     def test_extreme_cutoff_drops_everything(self):
         result = execute_retrieve("growth loops", top_k=3, relevance_cutoff=0.99)

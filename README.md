@@ -61,7 +61,7 @@ npm run dev                 # http://localhost:5173 (proxies /api -> 127.0.0.1:8
 
 ```bash
 cd backend
-python -m pytest            # 70 tests; uses isolated temp DB/vector store
+python -m pytest            # 72 tests; uses isolated temp DB/vector store
 ```
 
 ## Provider configuration
@@ -79,11 +79,21 @@ catalogs as of September 2026 — older defaults (gemini-1.5-flash, llama-3.3-70
 Set the default with `LLM_PROVIDER=ollama|groq|gemini|mock`. The frontend dropdown can switch
 providers per session (or per message) regardless of the default.
 
-**Grounded-refusal cutoff:** retrieval drops chunks scoring below `RELEVANCE_CUTOFF`
-(default `0.30` on the 0–1 cosine-similarity scale). On this corpus, on-topic queries score
-0.45–0.75 while off-topic ones (recipes, sports, weather) score under 0.20 — so off-topic
-questions get a genuine refusal rather than an answer forced from the nearest neighbors.
-Raise it to demand stricter grounding, or set `0` to restore classic nearest-neighbor behavior.
+**Grounded-refusal cutoff:** retrieval drops chunks whose bi-encoder cosine similarity
+scores below `RELEVANCE_CUTOFF` (default `0.62`, calibrated for `bge-small-en-v1.5`).
+On this corpus on-topic queries score 0.66–0.81 while off-topic ones (recipes, sports,
+weather) stay under 0.58 — so off-topic questions get a genuine refusal rather than an
+answer forced from the nearest neighbors. Raise it to demand stricter grounding, or set
+`0` to restore classic nearest-neighbor behavior.
+
+**Embeddings + reranking:** chunks are indexed with `BAAI/bge-small-en-v1.5` (384-dim,
+query-prefixed for asymmetric retrieval) via sentence-transformers. At query time the top
+`RERANK_CANDIDATES` candidates that clear the gate are re-ordered by a cross-encoder
+(`cross-encoder/ms-marco-MiniLM-L-6-v2`) so answer-bearing excerpts surface first — the
+cross-encoder orders but never admits chunks, since it scores conversational transcript
+excerpts low even when they're topically relevant. Changing `EMBEDDING_MODEL` auto-reindexes
+the vector store on next use (the model name is stored in collection metadata); models
+download to the local HF cache on first run.
 
 **Model retirement auto-fallback:** every provider is wrapped in an `InstrumentedProvider` that
 detects model-not-found errors, queries the provider's catalog, ranks candidates
@@ -96,7 +106,7 @@ The LLM decides which tool to call (OpenAI-style function calling across provide
 
 | Tool | Purpose |
 |---|---|
-| `retrieve` | Semantic search over the transcript vector store; returns cited chunks with guest/episode metadata |
+| `retrieve` | Bi-encoder search + cross-encoder rerank over the transcript vector store; returns cited chunks with guest/episode metadata |
 | `prd_generator` | Production-grade PRD: problem statement, HXC persona, goals/metrics, user stories, non-goals, rollout plan |
 | `pre_mortem_simulator` | Shreyas Doshi-style pre-mortem: failure modes, mitigations, go/no-go checklist |
 | `growth_audit` | Funnel/activation/retention diagnosis with benchmarks and experiment suggestions |

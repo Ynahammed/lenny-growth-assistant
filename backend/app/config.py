@@ -40,9 +40,22 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 120
     TOP_K_RETRIEVAL: int = 4
 
-    # Minimum cosine-similarity score (0-1 scale) for a retrieved chunk to be
-    # used. Chunks scoring below this are dropped, so off-topic queries get a
-    # genuine refusal instead of forced nearest-neighbor answers.
-    RELEVANCE_CUTOFF: float = 0.30
+    # Refusal gate: a chunk is only used if its bi-encoder cosine similarity
+    # (0-1) clears this. On the default bge-small corpus, on-topic queries score
+    # 0.66-0.81 while off-topic ones stay under 0.58 — so off-topic questions
+    # get a genuine refusal instead of forced nearest-neighbor answers.
+    # Calibrated for EMBEDDING_MODEL=BAAI/bge-small-en-v1.5; recalibrate when
+    # switching models.
+    RELEVANCE_CUTOFF: float = 0.62
+
+    # Embedding + reranking stack (sentence-transformers). When EMBEDDING_MODEL
+    # changes, the vector store re-indexes itself automatically on next use.
+    EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
+    EMBED_QUERY_INSTRUCTION: bool = True
+    # Cross-encoder used to ORDER gate-passing chunks (answer-bearing
+    # relevance). Admission/refusal is decided by the cosine gate above.
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RERANK_ENABLED: bool = True
+    RERANK_CANDIDATES: int = 12
 
 settings = Settings()

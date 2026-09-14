@@ -16,12 +16,68 @@ if str(BASE_DIR) not in sys.path:
 import chromadb
 from chromadb.utils import embedding_functions
 from app.config import settings
+from app.rag.embeddings import embed_texts
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("lenny_growth.ingest")
+
+
+class SentenceTransformerEmbeddingFunction:
+    """Chroma-compatible wrapper around the shared sentence-transformers embedder."""
+
+    def __call__(self, input):
+        return embed_texts(list(input))
+
+    def name(self) -> str:
+        return f"sentence_transformers::{settings.EMBEDDING_MODEL}"
+
+    def get_config(self) -> dict:
+        return {"model": settings.EMBEDDING_MODEL}
+
+    @staticmethod
+    def build_from_config(config: dict = None) -> "SentenceTransformerEmbeddingFunction":
+        return SentenceTransformerEmbeddingFunction()
+
+
+def get_query_embedding_function():
+    """Embedding function matching the configured stack (ST model or Chroma default)."""
+    if settings.EMBEDDING_MODEL:
+        return SentenceTransformerEmbeddingFunction()
+    return embedding_functions.DefaultEmbeddingFunction()
+
+
+def ensure_compatible_collection(client):
+    """Get or create the transcript collection, deleting a stale one when the
+    configured embedding model differs from the one it was built with (vectors
+    from different models are incomparable). Returns (collection, embedding_fn);
+    callers are responsible for (re-)indexing when count() == 0."""
+    name = settings.CHROMA_COLLECTION_NAME
+    embedding_fn = get_query_embedding_function()
+    meta = {
+        "description": "Lenny's Podcast Transcript Vectors",
+        "embedding_model": settings.EMBEDDING_MODEL or "chroma_default",
+    }
+    try:
+        collection = client.get_collection(name=name, embedding_function=embedding_fn)
+        stored_model = (collection.metadata or {}).get("embedding_model", "")
+        if stored_model != meta["embedding_model"]:
+            logger.warning(
+                f"Embedding model changed ({stored_model or 'legacy/unknown'} -> "
+                f"{meta['embedding_model']}); dropping stale collection for re-index."
+            )
+            client.delete_collection(name=name)
+            collection = client.get_or_create_collection(
+                name=name, embedding_function=embedding_fn, metadata=meta
+            )
+        return collection, embedding_fn
+    except Exception:
+        collection = client.get_or_create_collection(
+            name=name, embedding_function=embedding_fn, metadata=meta
+        )
+        return collection, embedding_fn
 
 
 def parse_transcript_file(file_path: Path) -> Dict[str, Any]:
@@ -108,21 +164,14 @@ def run_ingestion(transcripts_dir: str = None, reset: bool = False) -> Dict[str,
         
     client = get_chroma_client()
     collection_name = settings.CHROMA_COLLECTION_NAME
-    
     if reset:
         try:
             client.delete_collection(name=collection_name)
             logger.info(f"Deleted existing collection: {collection_name}")
         except Exception:
             pass
-            
-    embedding_fn = embedding_functions.DefaultEmbeddingFunction()
-    collection = client.get_or_create_collection(
-        name=collection_name,
-        embedding_function=embedding_fn,
-        metadata={"description": "Lenny's Podcast Transcript Vectors"}
-    )
-    
+    collection, embedding_fn = ensure_compatible_collection(client)
+
     files = list(target_dir.glob("*.txt")) + list(target_dir.glob("*.md"))
     if not files:
         logger.warning(f"No transcript files (.txt, .md) found in {target_dir}")
@@ -161,11 +210,14 @@ def run_ingestion(transcripts_dir: str = None, reset: bool = False) -> Dict[str,
             total_chunks += 1
             
     if all_ids:
-        batch_size = 100
+        batch_size = 64
         for i in range(0, len(all_ids), batch_size):
+            batch_docs = all_documents[i:i+batch_size]
+            batch_vectors = embed_texts(batch_docs)
             collection.upsert(
                 ids=all_ids[i:i+batch_size],
-                documents=all_documents[i:i+batch_size],
+                documents=batch_docs,
+                embeddings=batch_vectors,
                 metadatas=all_metadatas[i:i+batch_size]
             )
             
@@ -181,12 +233,13 @@ def run_ingestion(transcripts_dir: str = None, reset: bool = False) -> Dict[str,
 def get_collection_stats() -> Dict[str, Any]:
     try:
         client = get_chroma_client()
-        collection = client.get_collection(name=settings.CHROMA_COLLECTION_NAME)
+        collection, _ = ensure_compatible_collection(client)
         count = collection.count()
         return {
             "status": "active",
             "collection_name": settings.CHROMA_COLLECTION_NAME,
             "total_chunks": count,
+            "embedding_model": (collection.metadata or {}).get("embedding_model", "unknown"),
             "persist_directory": settings.CHROMA_PERSIST_DIRECTORY
         }
     except Exception as e:

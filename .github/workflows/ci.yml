@@ -26,11 +26,21 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          # Embedding + reranker models used by the retrieval tests
+          path: ~/.cache/huggingface
+          key: hf-models-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: hf-models-
+
       - name: Run tests
         env:
           # Tests are hermetic (temp DB/vector store) and use the mock provider;
           # no real API keys are needed or used in CI.
           LLM_PROVIDER: mock
+          # Keras 3 breaks transformers' optional TF backend; force the torch path
+          USE_TF: "0"
         run: python -m pytest -q
 
   frontend:
