@@ -127,6 +127,7 @@ export function Sidebar({
   activeProvider,
   onProviderChange,
   providerStatus,
+  corpus,
 }) {
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -238,7 +239,11 @@ export function Sidebar({
           <span className="corpus-icon">🎧</span>
           <div className="corpus-text">
             <strong>Lenny Transcript Corpus</strong>
-            <span>10 Episodes · 51 Indexed Chunks</span>
+            <span>
+              {corpus?.episodes?.length
+                ? `${corpus.episodes.length} Episodes · ${corpus.total_chunks} Indexed Chunks`
+                : 'Loading corpus…'}
+            </span>
           </div>
         </div>
       </div>
@@ -606,6 +611,62 @@ export function ChatInput({ onSend, isLoading, disabled }) {
           <kbd>Enter</kbd> to stream response · <kbd>Shift+Enter</kbd> for new line · 100% Grounded
         </div>
       </div>
+    </div>
+  );
+}
+
+
+/**
+ * Retrieval filter chips: constrain answers to one guest or episode.
+ * Renders nothing while corpus metadata is unavailable/empty.
+ */
+export function FilterChips({ corpus, guest, episode, onChange, disabled }) {
+  if (!corpus || (!corpus.guests?.length && !corpus.episodes?.length)) return null;
+
+  const hasFilter = Boolean(guest || episode);
+
+  return (
+    <div className="filter-chips-row" aria-label="Retrieval filters">
+      <span className="filter-chips-label">Search only</span>
+
+      <select
+        className="filter-chip"
+        value={guest || ''}
+        disabled={disabled}
+        onChange={(e) => onChange({ guest: e.target.value || null, episode })}
+        title="Restrict retrieval to one guest"
+      >
+        <option value="">All guests</option>
+        {corpus.guests.map((g) => (
+          <option key={g} value={g}>{g}</option>
+        ))}
+      </select>
+
+      <select
+        className="filter-chip filter-chip-episode"
+        value={episode || ''}
+        disabled={disabled}
+        onChange={(e) => onChange({ guest, episode: e.target.value ? Number(e.target.value) : null })}
+        title="Restrict retrieval to one episode"
+      >
+        <option value="">All episodes</option>
+        {corpus.episodes.map((ep) => (
+          <option key={ep.episode_number} value={ep.episode_number}>
+            #{ep.episode_number} · {ep.guest}
+          </option>
+        ))}
+      </select>
+
+      {hasFilter && (
+        <button
+          className="filter-chip-clear"
+          onClick={() => onChange({ guest: null, episode: null })}
+          title="Clear filters"
+        >
+          <Icons.X />
+          Clear
+        </button>
+      )}
     </div>
   );
 }

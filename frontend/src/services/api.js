@@ -61,6 +61,11 @@ export async function getConfig() {
   return request('/config');
 }
 
+/** Get corpus metadata (guests + episodes) for retrieval filter chips */
+export async function getCorpusMetadata() {
+  return request('/corpus');
+}
+
 /** List all chat sessions */
 export async function listSessions() {
   return request('/chat/sessions');
@@ -92,17 +97,22 @@ export async function sendMessage(sessionId, content, provider = null) {
  * @param {string} sessionId
  * @param {string} content
  * @param {string} provider
+ * @param {object|null} retrieveFilters - Optional { guest, episode_number } retrieval filters
  * @param {function} onEvent - Callback for SSE events (token, status, tool_start, sources, artifacts, done)
  * @param {function} onError - Callback for errors
  */
-export async function sendMessageStream(sessionId, content, provider = null, onEvent, onError) {
+export async function sendMessageStream(sessionId, content, provider = null, retrieveFilters = null, onEvent, onError) {
   try {
     const response = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content, provider }),
+      body: JSON.stringify({
+        content,
+        provider,
+        ...(retrieveFilters || {}),
+      }),
     });
 
     if (!response.ok) {

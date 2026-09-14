@@ -5,6 +5,47 @@ from app.database.models import ArtifactModel
 from app.database.db import SessionLocal
 
 
+class TestCorpusMetadataEndpoint:
+    def test_corpus_lists_guests_and_episodes(self, client):
+        resp = client.get("/api/corpus")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_chunks"] > 0
+        assert "Rahul Vohra" in data["guests"], data["guests"]
+        eps = {e["episode_number"] for e in data["episodes"]}
+        assert 11 in eps and 104 in eps
+        ep64 = next(e for e in data["episodes"] if e["episode_number"] == 11)
+        assert ep64["guest"] == "Rahul Vohra"
+        assert "episode_title" in ep64
+
+
+class TestFilteredMessages:
+    def test_send_message_accepts_retrieve_filters(self, client, stub_provider, patch_provider_factory):
+        from app.llm.provider import LLMResponse, ToolCall
+        from tests.conftest import StubProvider
+
+        stub = StubProvider(responses=[
+            LLMResponse(
+                content="",
+                tool_calls=[ToolCall(id="call_1", name="retrieve", arguments={"query": "positioning"})],
+                provider="stub", model="stub-model",
+            ),
+            LLMResponse(content="Dunford-grounded answer.", provider="stub", model="stub-model"),
+        ])
+        patch_provider_factory(stub)
+
+        resp = client.post("/api/chat/sessions", json={"title": "Filter Session"})
+        sid = resp.json()["id"]
+        resp = client.post(
+            f"/api/chat/sessions/{sid}/messages",
+            json={"content": "positioning", "guest": "April Dunford"},
+        )
+        assert resp.status_code == 200, resp.text
+        sources = resp.json()["assistant_message"]["sources"]
+        assert sources, "filter should still return sources for on-topic query"
+        assert all(s["guest"] == "April Dunford" for s in sources)
+
+
 class TestHealthAndConfig:
     def test_health_reports_core_services(self, client):
         resp = client.get("/api/health")

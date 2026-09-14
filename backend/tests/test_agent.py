@@ -102,6 +102,52 @@ class TestRefusalGate:
         assert "NO_RELEVANT_EVIDENCE" not in out
         assert "GUEST" in out
 
+    def test_turn_filters_pin_guest_across_tool_calls(self):
+        # UI-supplied filters apply even when the LLM omits them from its
+        # retrieve arguments.
+        agent = AgentManager(provider_type="mock")
+        agent._turn_filters = {"guest": "April Dunford"}
+
+        class FakeTC:
+            name = "retrieve"
+            id = "c4"
+            arguments = {"query": "positioning against competitors"}
+
+        collected, artifacts = [], []
+        agent._execute_tool(FakeTC(), "positioning", collected, artifacts)
+        assert collected, "filtered retrieval should collect sources"
+        assert all(s["guest"] == "April Dunford" for s in collected)
+
+    def test_turn_filters_override_llm_chosen_guest(self):
+        # User intent wins: if the UI pins a guest, the LLM naming a different
+        # guest in its tool arguments must not unpin it.
+        agent = AgentManager(provider_type="mock")
+        agent._turn_filters = {"guest": "Rahul Vohra"}
+
+        class FakeTC:
+            name = "retrieve"
+            id = "c6"
+            arguments = {"query": "PMF measurement", "guest": "Shreyas Doshi"}
+
+        collected, artifacts = [], []
+        agent._execute_tool(FakeTC(), "PMF measurement", collected, artifacts)
+        assert collected
+        assert all(s["guest"] == "Rahul Vohra" for s in collected)
+
+    def test_unknown_guest_tool_output_carries_filter_error(self):
+        agent = AgentManager(provider_type="mock")
+
+        class FakeTC:
+            name = "retrieve"
+            id = "c5"
+            arguments = {"query": "positioning", "guest": "Not A Guest"}
+
+        collected, artifacts = [], []
+        out = agent._execute_tool(FakeTC(), "positioning", collected, artifacts)
+        assert collected == []
+        assert "FILTER_ERROR" in out
+        assert "Available guests" in out
+
 
 class TestProviderErrorSurface:
     @pytest.mark.asyncio

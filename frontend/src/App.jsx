@@ -5,6 +5,7 @@ import {
   ChatMessage,
   ThinkingIndicator,
   ChatInput,
+  FilterChips,
   ArtifactPanel,
   CitationModal,
   Toast,
@@ -13,6 +14,7 @@ import {
 import {
   getHealth,
   getConfig,
+  getCorpusMetadata,
   listSessions,
   createSession,
   getSession,
@@ -49,6 +51,11 @@ export default function App() {
   ]);
   const [activeProvider, setActiveProvider] = useState('ollama');
   const [providerStatus, setProviderStatus] = useState('healthy');
+
+  // Retrieval filter state (guest/episode chips)
+  const [corpus, setCorpus] = useState(null);
+  const [guestFilter, setGuestFilter] = useState(null);
+  const [episodeFilter, setEpisodeFilter] = useState(null);
 
   // Toast
   const [toasts, setToasts] = useState([]);
@@ -100,6 +107,11 @@ export default function App() {
 
         const sessionsData = await listSessions().catch(() => []);
         setSessions(sessionsData);
+
+        // Filter chips need corpus metadata; degrade silently if unavailable.
+        getCorpusMetadata()
+          .then((meta) => setCorpus(meta))
+          .catch(() => setCorpus(null));
       } catch (err) {
         addToast('Connected with local fallback mode.', 'info');
       }
@@ -261,10 +273,15 @@ export default function App() {
     scrollToBottom();
 
     try {
+      const retrieveFilters = {};
+      if (guestFilter) retrieveFilters.guest = guestFilter;
+      if (episodeFilter) retrieveFilters.episode_number = episodeFilter;
+
       await sendMessageStream(
         sessionId,
         content,
         activeProvider,
+        Object.keys(retrieveFilters).length ? retrieveFilters : null,
         (event) => {
           if (event.type === 'status') {
             setStatusText(event.status || 'Composing response…');
@@ -385,6 +402,7 @@ export default function App() {
         activeProvider={activeProvider}
         onProviderChange={handleProviderChange}
         providerStatus={providerStatus}
+        corpus={corpus}
       />
 
       {/* Main Chat Area */}
@@ -447,6 +465,23 @@ export default function App() {
             </div>
           )}
         </div>
+
+        <FilterChips
+          corpus={corpus}
+          guest={guestFilter}
+          episode={episodeFilter}
+          disabled={isLoading}
+          onChange={({ guest, episode }) => {
+            setGuestFilter(guest);
+            setEpisodeFilter(episode);
+            if (guest || episode) {
+              const label = guest
+                ? `Answers now grounded only in ${guest}'s episode${episode ? ` (Ep #${episode})` : ''}`
+                : `Answers now grounded only in Ep #${episode}`;
+              addToast(label, 'info');
+            }
+          }}
+        />
 
         <ChatInput
           onSend={handleSendMessage}

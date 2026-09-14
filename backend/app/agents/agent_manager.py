@@ -38,6 +38,12 @@ CORE OPERATING PRINCIPLES:
    - Use `pre_mortem_simulator` when asked for a Pre-Mortem or launch failure risk analysis.
    - Use `growth_audit` when analyzing funnel metrics, churn, or retention drop-offs.
    - Use `ship30_essay` when asked for an atomic essay or publishable summary.
+
+4. OPTIONAL RETRIEVAL FILTERS:
+   - `retrieve` accepts optional `guest` and `episode_number` arguments. When the
+     user names a guest ('what does Shreyas say...') or a specific episode
+     ('in episode 64...'), pass the filter. If a `filter_error` names available
+     guests, retry once with a corrected guest name from that list.
 """
 
 
@@ -89,6 +95,8 @@ class AgentManager:
     def __init__(self, provider_type: Optional[str] = None):
         self.provider_type = provider_type or settings.LLM_PROVIDER
         self.provider: LLMProvider = get_provider(self.provider_type)
+        # Per-turn retrieval filters (set by routes from UI filter chips).
+        self._turn_filters: Dict[str, Any] = {}
 
     def _execute_tool(self, tool_call, user_message: str, collected_sources: list, generated_artifacts: list) -> str:
         name = tool_call.name
@@ -102,7 +110,25 @@ class AgentManager:
             top_k = args.get("top_k", settings.TOP_K_RETRIEVAL)
             if not isinstance(top_k, int):
                 top_k = settings.TOP_K_RETRIEVAL
-            retrieval_res = execute_retrieve(query=str(query), top_k=top_k)
+            # UI-supplied turn filters express explicit user intent and WIN
+            # over whatever guest/episode the LLM puts in its tool args.
+            guest = self._turn_filters.get("guest") or args.get("guest")
+            if isinstance(guest, str) and not guest.strip():
+                guest = None
+            episode_number = self._turn_filters.get("episode_number")
+            if episode_number is None:
+                episode_number = args.get("episode_number")
+            if isinstance(episode_number, str):
+                try:
+                    episode_number = int(episode_number)
+                except (TypeError, ValueError):
+                    episode_number = None
+            if not isinstance(episode_number, int):
+                episode_number = None
+            retrieval_res = execute_retrieve(
+                query=str(query), top_k=top_k,
+                guest=guest, episode_number=episode_number,
+            )
 
             for chunk in retrieval_res.get("chunks", []):
                 if not any(s.get("chunk_id") == chunk.get("chunk_id") for s in collected_sources):
@@ -120,6 +146,8 @@ class AgentManager:
                     "threshold for this query. Per your instructions, you MUST refuse "
                     "to answer this topic from general knowledge."
                 )
+            if retrieval_res.get("filter_error"):
+                return f"FILTER_ERROR: {retrieval_res['filter_error']} Retry the retrieve call with a valid guest from the list above, or without the filter."
             return "\n---\n".join(formatted_chunks) if formatted_chunks else "No relevant transcripts found."
 
         elif name == "prd_generator":
@@ -176,7 +204,8 @@ class AgentManager:
         self,
         conversation_history: List[Dict[str, Any]],
         user_message: str,
-        max_tool_iterations: int = 3
+        max_tool_iterations: int = 3,
+        retrieve_filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         messages = list(conversation_history)
         messages.append({"role": "user", "content": user_message})
@@ -184,6 +213,7 @@ class AgentManager:
         collected_sources: List[Dict[str, Any]] = []
         generated_artifacts: List[Dict[str, Any]] = []
         tool_results_history = list(messages)
+        self._turn_filters = dict(retrieve_filters) if retrieve_filters else {}
 
         for iteration in range(max_tool_iterations):
             current_tools = None if (collected_sources or iteration > 0) else AVAILABLE_TOOLS
@@ -251,7 +281,8 @@ class AgentManager:
     async def execute_turn_stream(
         self,
         conversation_history: List[Dict[str, Any]],
-        user_message: str
+        user_message: str,
+        retrieve_filters: Optional[Dict[str, Any]] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Streaming execution yielding real-time events, tool status, tokens, sources, and artifacts."""
         messages = list(conversation_history)
@@ -260,6 +291,7 @@ class AgentManager:
         collected_sources: List[Dict[str, Any]] = []
         generated_artifacts: List[Dict[str, Any]] = []
         tool_results_history = list(messages)
+        self._turn_filters = dict(retrieve_filters) if retrieve_filters else {}
 
         yield {"type": "status", "status": "Thinking & querying podcast transcripts..."}
 

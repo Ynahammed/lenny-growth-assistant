@@ -1,12 +1,13 @@
 """
 RAG Retrieval Tool for querying Lenny's Podcast Vector Store.
 
-Pipeline: bi-encoder candidate search (bge-small) -> cross-encoder rerank
-(ms-marco MiniLM) -> relevance-cutoff gate. Off-topic queries produce an
-explicit no_relevant_evidence result instead of forced nearest neighbors.
+Pipeline: optional guest/episode metadata filter -> bi-encoder candidate search
+(bge-small) -> cosine gate (RELEVANCE_CUTOFF) -> cross-encoder rerank
+(ms-marco MiniLM) -> top_k. Off-topic queries produce an explicit
+no_relevant_evidence result instead of forced nearest neighbors.
 """
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import chromadb
 from app.config import settings
 from app.rag.embeddings import embed_texts, rerank_pairs
@@ -15,7 +16,7 @@ logger = logging.getLogger("lenny_growth.tools.retrieve")
 
 RETRIEVE_TOOL_SCHEMA = {
     "name": "retrieve",
-    "description": "Searches the vector database for relevant transcripts from Lenny's Podcast on product management, growth loops, marketplace metrics, and strategy.",
+    "description": "Searches the vector database for relevant transcripts from Lenny's Podcast on product management, growth loops, marketplace metrics, and strategy. Supports optional filters to restrict the search to a specific guest or episode.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -27,6 +28,14 @@ RETRIEVE_TOOL_SCHEMA = {
                 "type": "integer",
                 "description": "Number of top relevant transcript chunks to return (default 4).",
                 "default": 4
+            },
+            "guest": {
+                "type": "string",
+                "description": "Optional: restrict the search to episodes with this guest (e.g. 'Shreyas Doshi', 'Casey Winters'). Use when the user names a guest or asks 'only X episodes'."
+            },
+            "episode_number": {
+                "type": "integer",
+                "description": "Optional: restrict the search to one episode number (e.g. 42). Use when the user references a specific episode."
             }
         },
         "required": ["query"]
@@ -34,14 +43,77 @@ RETRIEVE_TOOL_SCHEMA = {
 }
 
 
-def execute_retrieve(query: str, top_k: int = 4, relevance_cutoff: float = None) -> Dict[str, Any]:
+def get_available_guests() -> List[str]:
+    """Distinct guest names in the indexed corpus (for the UI filter picker)."""
+    try:
+        client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIRECTORY)
+        from app.ingestion.ingest import ensure_compatible_collection
+        collection, _ = ensure_compatible_collection(client)
+        if collection.count() == 0:
+            return []
+        metas = collection.get(include=["metadatas"]).get("metadatas", [])
+        return sorted({m.get("guest", "") for m in metas if m.get("guest")})
+    except Exception as e:
+        logger.error(f"Error listing guests: {e}")
+        return []
+
+
+def _resolve_filter(
+    collection,
+    guest: Optional[str],
+    episode_number: Optional[int],
+) -> Optional[Dict[str, Any]]:
+    """Build a Chroma where-clause from free-form guest/episode inputs.
+
+    Guest names are matched fuzzily case-insensitively against the indexed
+    metadata (e.g. 'shreyas' -> 'Shreyas Doshi'); unknown guests raise
+    ValueError listing the available ones so the LLM can self-correct."""
+    if not guest and episode_number is None:
+        return None
+
+    conditions = []
+
+    if guest:
+        wanted = str(guest).strip().lower()
+        metas = collection.get(include=["metadatas"]).get("metadatas", [])
+        indexed_guests = {m.get("guest", "") for m in metas if m.get("guest")}
+        matches = {g for g in indexed_guests
+                   if wanted == g.lower() or wanted in g.lower() or g.lower() in wanted}
+        if not matches:
+            raise ValueError(
+                f"Guest '{guest}' not found in the corpus. Available guests: "
+                f"{sorted(indexed_guests)}"
+            )
+        if len(matches) == 1:
+            conditions.append({"guest": {"$eq": next(iter(matches))}})
+        else:
+            conditions.append({"guest": {"$in": sorted(matches)}})
+
+    if episode_number is not None:
+        conditions.append({"episode_number": {"$eq": int(episode_number)}})
+
+    if not conditions:
+        return None
+    if len(conditions) == 1:
+        return conditions[0]
+    return {"$and": conditions}
+
+
+def execute_retrieve(
+    query: str,
+    top_k: int = 4,
+    relevance_cutoff: float = None,
+    guest: Optional[str] = None,
+    episode_number: Optional[int] = None,
+) -> Dict[str, Any]:
     """Retrieve transcript chunks for a query.
 
-    Pipeline: bi-encoder candidates -> cosine gate (topical admission / refusal,
-    RELEVANCE_CUTOFF) -> cross-encoder rerank (ordering) -> top_k. The gate runs
-    on cosine because cross-encoders measure answer-bearing relevance and would
-    wrongly refuse topically-relevant dialogue excerpts; the reranker then
-    surfaces the chunks that actually answer the question."""
+    Pipeline: metadata filter (guest/episode) -> bi-encoder candidates ->
+    cosine gate (topical admission / refusal, RELEVANCE_CUTOFF) -> cross-encoder
+    rerank (ordering) -> top_k. The gate runs on cosine because cross-encoders
+    measure answer-bearing relevance and would wrongly refuse topically-relevant
+    dialogue excerpts; the reranker then surfaces chunks that answer the
+    question."""
     if relevance_cutoff is None:
         relevance_cutoff = settings.RELEVANCE_CUTOFF
     try:
@@ -64,6 +136,8 @@ def execute_retrieve(query: str, top_k: int = 4, relevance_cutoff: float = None)
             run_ingestion()
             collection, _ = _ensure(client)
 
+        where = _resolve_filter(collection, guest, episode_number)
+
         # Over-fetch a candidate pool for the reranker to reorder.
         n_results = top_k
         if settings.RERANK_ENABLED:
@@ -76,6 +150,7 @@ def execute_retrieve(query: str, top_k: int = 4, relevance_cutoff: float = None)
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=n_results,
+            where=where,
             include=["documents", "metadatas", "distances"]
         )
 
@@ -102,7 +177,18 @@ def execute_retrieve(query: str, top_k: int = 4, relevance_cutoff: float = None)
             })
 
         if not candidates:
-            return {"query": query, "chunk_count": 0, "chunks": [], "no_relevant_evidence": True}
+            result: Dict[str, Any] = {
+                "query": query,
+                "chunk_count": 0,
+                "chunks": [],
+            }
+            if where is not None:
+                result["error"] = (
+                    "No indexed chunks match the requested guest/episode filter."
+                )
+            else:
+                result["no_relevant_evidence"] = True
+            return result
 
         # Gate on bi-encoder cosine: topical admission / refusal.
         gate_passed: List[Dict[str, Any]] = []
@@ -131,14 +217,28 @@ def execute_retrieve(query: str, top_k: int = 4, relevance_cutoff: float = None)
                 f"{relevance_cutoff} for query: '{query}'"
             )
 
-        result: Dict[str, Any] = {
+        out: Dict[str, Any] = {
             "query": query,
             "chunk_count": len(chunks),
             "chunks": chunks
         }
         if dropped and not chunks:
-            result["no_relevant_evidence"] = True
-        return result
+            out["no_relevant_evidence"] = True
+        if where is not None:
+            out["filtered"] = {
+                k: v for k, v in {"guest": guest, "episode_number": episode_number}.items()
+                if v is not None
+            }
+        return out
+    except ValueError as e:
+        # Unknown guest/episode: a filter the LLM can correct on its next call.
+        logger.info(f"Filter resolution failed for query '{query}': {e}")
+        return {
+            "query": query,
+            "chunk_count": 0,
+            "chunks": [],
+            "filter_error": str(e),
+        }
     except Exception as e:
         logger.error(f"Error during retrieve tool execution: {e}", exc_info=True)
         return {

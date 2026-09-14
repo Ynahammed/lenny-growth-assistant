@@ -1213,6 +1213,80 @@ body {
   color: var(--text-tertiary);
 }
 
+/* ── Retrieval filter chips ────────────────────────── */
+.filter-chips-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding: 0 var(--space-lg);
+  margin-bottom: calc(-1 * var(--space-xs));
+}
+
+.filter-chips-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.filter-chip {
+  appearance: none;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-family: inherit;
+  padding: 5px 26px 5px 12px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%23888' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.filter-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.filter-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-chip:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.filter-chip-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 999px;
+  transition: color var(--transition-fast);
+}
+
+.filter-chip-clear:hover {
+  color: var(--text-primary);
+}
+
+.filter-chip-clear svg {
+  width: 10px;
+  height: 10px;
+}
+
 .input-hint kbd {
   padding: 1px 5px;
   background: var(--bg-tertiary);

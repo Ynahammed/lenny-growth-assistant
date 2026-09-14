@@ -152,3 +152,33 @@ def get_public_config():
         ],
         "ollama_base_url": settings.OLLAMA_BASE_URL
     }
+
+
+@app.get("/api/corpus", tags=["System"])
+def get_corpus_metadata():
+    """Guests and episodes available in the indexed transcript corpus,
+    for building retrieval filter chips in the UI."""
+    try:
+        from app.ingestion.ingest import get_chroma_client, ensure_compatible_collection
+        client = get_chroma_client()
+        collection, _ = ensure_compatible_collection(client)
+        count = collection.count()
+        if count == 0:
+            return {"guests": [], "episodes": [], "total_chunks": 0}
+        metas = collection.get(include=["metadatas"]).get("metadatas", [])
+
+        by_episode = {}
+        for m in metas:
+            ep = int(m.get("episode_number") or 0)
+            entry = by_episode.setdefault(ep, {
+                "episode_number": ep,
+                "episode_title": m.get("episode_title", "Unknown"),
+                "guest": m.get("guest", "Unknown"),
+            })
+
+        episodes = sorted(by_episode.values(), key=lambda e: e["episode_number"])
+        guests = sorted({e["guest"] for e in episodes})
+        return {"guests": guests, "episodes": episodes, "total_chunks": count}
+    except Exception as e:
+        logger.error(f"Error building corpus metadata: {e}", exc_info=True)
+        return {"guests": [], "episodes": [], "total_chunks": 0, "error": str(e)}

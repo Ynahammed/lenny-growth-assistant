@@ -26,6 +26,8 @@ class CreateSessionRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     content: str = Field(..., min_length=1, description="User prompt or question.")
     provider: Optional[str] = None
+    guest: Optional[str] = None
+    episode_number: Optional[int] = None
 
 
 class SessionSummaryResponse(BaseModel):
@@ -161,9 +163,16 @@ async def send_message(session_id: str, payload: SendMessageRequest, db: Session
     active_provider = payload.provider or session_obj.provider_used or settings.LLM_PROVIDER
     agent = AgentManager(provider_type=active_provider)
 
+    retrieve_filters = {
+        k: v for k, v in {
+            "guest": payload.guest,
+            "episode_number": payload.episode_number,
+        }.items() if v is not None
+    }
     turn_result = await agent.execute_turn(
         conversation_history=history_payload,
-        user_message=payload.content
+        user_message=payload.content,
+        retrieve_filters=retrieve_filters or None,
     )
 
     asst_msg = MessageModel(
@@ -231,6 +240,12 @@ async def send_message_stream(session_id: str, payload: SendMessageRequest):
             for m in prior_messages[:-1]
         ]
         active_provider = payload.provider or session_obj.provider_used or settings.LLM_PROVIDER
+        retrieve_filters = {
+            k: v for k, v in {
+                "guest": payload.guest,
+                "episode_number": payload.episode_number,
+            }.items() if v is not None
+        }
     finally:
         db.close()
 
@@ -244,7 +259,8 @@ async def send_message_stream(session_id: str, payload: SendMessageRequest):
         try:
             async for event in agent.execute_turn_stream(
                 conversation_history=history_payload,
-                user_message=payload.content
+                user_message=payload.content,
+                retrieve_filters=retrieve_filters or None,
             ):
                 if event.get("type") == "token":
                     final_text += event.get("token", "")
