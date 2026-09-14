@@ -64,6 +64,26 @@ cd backend
 python -m pytest            # 72 tests; uses isolated temp DB/vector store
 ```
 
+### Groundedness eval
+
+A 33-case eval set (`backend/tests/eval/`) scores what unit tests can't: does retrieval
+surface the *right* episode, do citations rank the right guest first, and do off-domain
+questions actually get refused. It runs the real embedding + reranking pipeline against a
+fresh temp vector store (never touches the dev index).
+
+```bash
+cd backend
+python -m tests.eval.runner             # report; exit 1 below thresholds
+python -m tests.eval.runner --show-all  # per-case detail with cosine scores
+python -m pytest -m eval                # same suite as a slow pytest marker
+```
+
+Current baseline: **97% overall** (refusal 10/10, citation 6/6, retrieval 16/17) with
+refusals gated at 100% — a single leak fails the suite. The one known retrieval gap is the
+documented `hxc_segment` case: jargon-only phrasings can land ~0.02 below the refusal gate
+(lowering the gate would break off-topic refusal; adding context to the query fixes it).
+Re-run the eval after any retrieval, embedding-model, or cutoff change.
+
 ## Provider configuration
 
 Configure in `backend/.env` (never commit this file). Current model defaults reflect vendor
