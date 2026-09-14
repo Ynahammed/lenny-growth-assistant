@@ -92,6 +92,13 @@ class TestRetrievalFilters:
         assert result["chunk_count"] >= 1
         assert all(c["guest"] == "Shreyas Doshi" for c in result["chunks"])
 
+    def test_guest_filter_matches_ascii_spelling_of_diacritic_names(self):
+        # Users and LLMs write 'Alstromer'; the corpus stores 'Alströmer'.
+        result = execute_retrieve("growth channels playbook", top_k=2,
+                                  guest="Gustaf Alstromer")
+        assert result["chunk_count"] >= 1
+        assert all(c["guest"] == "Gustaf Alströmer" for c in result["chunks"])
+
     def test_unknown_guest_returns_filter_error_with_suggestions(self):
         result = execute_retrieve("positioning", top_k=2, guest="Zorpzeb The Unindexed")
         assert "filter_error" in result

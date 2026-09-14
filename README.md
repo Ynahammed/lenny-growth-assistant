@@ -119,6 +119,13 @@ excerpts low even when they're topically relevant. Changing `EMBEDDING_MODEL` au
 the vector store on next use (the model name is stored in collection metadata); models
 download to the local HF cache on first run.
 
+**Query contextualization:** vague follow-ups ("what about retention?", "tell me more")
+embed poorly on their own, so before retrieval they are rewritten into self-contained
+search queries using the recent conversation. Self-contained questions skip the rewrite
+entirely (no extra LLM call); the rewrite LLM failing degrades to deterministic stitching
+of the last user message onto the follow-up. Guest/episode filter chips still apply to the
+rewritten query, and user-pinned filters always win.
+
 **Model retirement auto-fallback:** every provider is wrapped in an `InstrumentedProvider` that
 detects model-not-found errors, queries the provider's catalog, ranks candidates
 (gpt-oss > llama > qwen > gemini …), switches, and retries — so a vendor retiring a model

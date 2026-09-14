@@ -7,6 +7,7 @@ Pipeline: optional guest/episode metadata filter -> bi-encoder candidate search
 no_relevant_evidence result instead of forced nearest neighbors.
 """
 import logging
+import unicodedata
 from typing import Dict, Any, List, Optional
 import chromadb
 from app.config import settings
@@ -58,6 +59,15 @@ def get_available_guests() -> List[str]:
         return []
 
 
+def _normalize_name(s: str) -> str:
+    """Lowercase and strip diacritics ('Gustaf Alströmer' -> 'gustaf alstromer')
+    so ASCII spellings from users/LLMs match indexed metadata."""
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", (s or "").lower())
+        if not unicodedata.combining(c)
+    )
+
+
 def _resolve_filter(
     collection,
     guest: Optional[str],
@@ -74,11 +84,15 @@ def _resolve_filter(
     conditions = []
 
     if guest:
-        wanted = str(guest).strip().lower()
+        wanted = _normalize_name(str(guest))
         metas = collection.get(include=["metadatas"]).get("metadatas", [])
         indexed_guests = {m.get("guest", "") for m in metas if m.get("guest")}
-        matches = {g for g in indexed_guests
-                   if wanted == g.lower() or wanted in g.lower() or g.lower() in wanted}
+        matches = {
+            g for g in indexed_guests
+            if wanted == _normalize_name(g)
+            or wanted in _normalize_name(g)
+            or _normalize_name(g) in wanted
+        }
         if not matches:
             raise ValueError(
                 f"Guest '{guest}' not found in the corpus. Available guests: "

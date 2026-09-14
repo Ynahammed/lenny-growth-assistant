@@ -13,6 +13,7 @@ from app.agents.tools.artifact_gen import execute_artifact_gen
 from app.agents.tools.prd_generator import execute_prd_generator
 from app.agents.tools.pre_mortem import execute_pre_mortem
 from app.agents.tools.growth_audit import execute_growth_audit
+from app.rag.query_rewrite import rewrite_query_for_search
 
 logger = logging.getLogger("lenny_growth.agents.manager")
 
@@ -98,7 +99,7 @@ class AgentManager:
         # Per-turn retrieval filters (set by routes from UI filter chips).
         self._turn_filters: Dict[str, Any] = {}
 
-    def _execute_tool(self, tool_call, user_message: str, collected_sources: list, generated_artifacts: list) -> str:
+    async def _execute_tool(self, tool_call, user_message: str, collected_sources: list, generated_artifacts: list, conversation_history: Optional[List[Dict[str, Any]]] = None) -> str:
         name = tool_call.name
         args = tool_call.arguments
         logger.info(f"Agent executing tool '{name}' with args: {args}")
@@ -125,10 +126,21 @@ class AgentManager:
                     episode_number = None
             if not isinstance(episode_number, int):
                 episode_number = None
+            # Contextualize vague follow-ups ("what about retention?") into
+            # self-contained search queries before embedding.
+            search_query = str(query)
+            rewrite = await rewrite_query_for_search(
+                search_query, conversation_history or [], provider=self.provider,
+            )
+            if rewrite["rewritten"]:
+                search_query = rewrite["query"]
+
             retrieval_res = execute_retrieve(
-                query=str(query), top_k=top_k,
+                query=search_query, top_k=top_k,
                 guest=guest, episode_number=episode_number,
             )
+            if rewrite["rewritten"]:
+                retrieval_res["original_query"] = str(query)
 
             for chunk in retrieval_res.get("chunks", []):
                 if not any(s.get("chunk_id") == chunk.get("chunk_id") for s in collected_sources):
@@ -249,7 +261,7 @@ class AgentManager:
                 }
 
             for tool_call in response.tool_calls:
-                tool_output = self._execute_tool(tool_call, user_message, collected_sources, generated_artifacts)
+                tool_output = await self._execute_tool(tool_call, user_message, collected_sources, generated_artifacts, conversation_history)
                 tool_results_history.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
@@ -309,7 +321,7 @@ class AgentManager:
         if initial_resp.tool_calls:
             for tc in initial_resp.tool_calls:
                 yield {"type": "tool_start", "tool": tc.name}
-                tool_out = self._execute_tool(tc, user_message, collected_sources, generated_artifacts)
+                tool_out = await self._execute_tool(tc, user_message, collected_sources, generated_artifacts, conversation_history)
                 tool_results_history.append({
                     "role": "tool",
                     "tool_call_id": tc.id,
