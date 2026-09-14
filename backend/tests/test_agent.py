@@ -62,8 +62,45 @@ class TestToolArgumentHandling:
             arguments = {"query": 12345}
 
         collected, artifacts = [], []
-        out = agent._execute_tool(FakeTC(), "real user question", collected, artifacts)
+        # On-topic fallback text: the numeric arg falls back to the user's
+        # message, which must still clear the relevance cutoff to collect sources.
+        out = agent._execute_tool(
+            FakeTC(), "How did Rahul Vohra measure product market fit?", collected, artifacts
+        )
         assert collected, "sources should be collected from user-message fallback"
+
+
+class TestRefusalGate:
+    """Off-topic questions must surface a no-evidence signal to the LLM, not
+    forced nearest-neighbor chunks."""
+
+    def test_off_topic_tool_output_carries_refusal_directive(self):
+        agent = AgentManager(provider_type="mock")
+
+        class FakeTC:
+            name = "retrieve"
+            id = "c2"
+            arguments = {"query": "sourdough bread recipe"}
+
+        collected, artifacts = [], []
+        out = agent._execute_tool(FakeTC(), "how do I bake sourdough", collected, artifacts)
+        assert collected == [], "no sources should be collected for off-topic queries"
+        assert "NO_RELEVANT_EVIDENCE" in out
+        assert "MUST refuse" in out
+
+    def test_on_topic_tool_output_includes_chunks(self):
+        agent = AgentManager(provider_type="mock")
+
+        class FakeTC:
+            name = "retrieve"
+            id = "c3"
+            arguments = {"query": "product market fit survey"}
+
+        collected, artifacts = [], []
+        out = agent._execute_tool(FakeTC(), "How is PMF measured?", collected, artifacts)
+        assert collected, "on-topic queries should still collect sources"
+        assert "NO_RELEVANT_EVIDENCE" not in out
+        assert "GUEST" in out
 
 
 class TestProviderErrorSurface:

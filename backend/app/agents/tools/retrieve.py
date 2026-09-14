@@ -30,11 +30,16 @@ RETRIEVE_TOOL_SCHEMA = {
 }
 
 
-def execute_retrieve(query: str, top_k: int = 4) -> Dict[str, Any]:
+def execute_retrieve(query: str, top_k: int = 4, relevance_cutoff: float = None) -> Dict[str, Any]:
+    """Retrieve transcript chunks for a query, dropping chunks below the
+    relevance cutoff so off-topic queries yield an explicit no-evidence result
+    rather than forced nearest-neighbor matches."""
+    if relevance_cutoff is None:
+        relevance_cutoff = settings.RELEVANCE_CUTOFF
     try:
         client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIRECTORY)
         embedding_fn = embedding_functions.DefaultEmbeddingFunction()
-        
+
         try:
             collection = client.get_collection(
                 name=settings.CHROMA_COLLECTION_NAME,
@@ -61,11 +66,16 @@ def execute_retrieve(query: str, top_k: int = 4) -> Dict[str, Any]:
         ids = results.get("ids", [[]])[0]
 
         chunks: List[Dict[str, Any]] = []
+        dropped = 0
         for i, doc in enumerate(documents):
             meta = metadatas[i] if i < len(metadatas) else {}
             dist = distances[i] if i < len(distances) else 1.0
             score = round(max(0.0, 1.0 - (dist / 2.0)), 3)
-            
+
+            if score < relevance_cutoff:
+                dropped += 1
+                continue
+
             chunks.append({
                 "chunk_id": ids[i] if i < len(ids) else f"chunk_{i}",
                 "guest": meta.get("guest", "Unknown"),
@@ -77,12 +87,20 @@ def execute_retrieve(query: str, top_k: int = 4) -> Dict[str, Any]:
                 "relevance_score": score
             })
 
-        logger.info(f"Retrieved {len(chunks)} chunks for query: '{query}'")
-        return {
+        if dropped:
+            logger.info(
+                f"Dropped {dropped}/{len(documents)} chunks below relevance "
+                f"cutoff {relevance_cutoff} for query: '{query}'"
+            )
+
+        result: Dict[str, Any] = {
             "query": query,
             "chunk_count": len(chunks),
             "chunks": chunks
         }
+        if dropped and not chunks:
+            result["no_relevant_evidence"] = True
+        return result
     except Exception as e:
         logger.error(f"Error during retrieve tool execution: {e}", exc_info=True)
         return {

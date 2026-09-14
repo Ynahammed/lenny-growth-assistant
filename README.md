@@ -61,7 +61,7 @@ npm run dev                 # http://localhost:5173 (proxies /api -> 127.0.0.1:8
 
 ```bash
 cd backend
-python -m pytest            # 63 tests; uses isolated temp DB/vector store
+python -m pytest            # 70 tests; uses isolated temp DB/vector store
 ```
 
 ## Provider configuration
@@ -78,6 +78,12 @@ catalogs as of September 2026 — older defaults (gemini-1.5-flash, llama-3.3-70
 
 Set the default with `LLM_PROVIDER=ollama|groq|gemini|mock`. The frontend dropdown can switch
 providers per session (or per message) regardless of the default.
+
+**Grounded-refusal cutoff:** retrieval drops chunks scoring below `RELEVANCE_CUTOFF`
+(default `0.30` on the 0–1 cosine-similarity scale). On this corpus, on-topic queries score
+0.45–0.75 while off-topic ones (recipes, sports, weather) score under 0.20 — so off-topic
+questions get a genuine refusal rather than an answer forced from the nearest neighbors.
+Raise it to demand stricter grounding, or set `0` to restore classic nearest-neighbor behavior.
 
 **Model retirement auto-fallback:** every provider is wrapped in an `InstrumentedProvider` that
 detects model-not-found errors, queries the provider's catalog, ranks candidates

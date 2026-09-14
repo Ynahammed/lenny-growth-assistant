@@ -40,4 +40,9 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 120
     TOP_K_RETRIEVAL: int = 4
 
+    # Minimum cosine-similarity score (0-1 scale) for a retrieved chunk to be
+    # used. Chunks scoring below this are dropped, so off-topic queries get a
+    # genuine refusal instead of forced nearest-neighbor answers.
+    RELEVANCE_CUTOFF: float = 0.30
+
 settings = Settings()

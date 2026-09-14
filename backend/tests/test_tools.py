@@ -22,11 +22,46 @@ class TestRetrieveTool:
         result = execute_retrieve("retention", top_k=2)
         assert result["chunk_count"] <= 2
 
-    def test_out_of_domain_query_still_returns_nearest(self):
-        # Vector search always returns nearest neighbors; grounding refusal is
-        # the LLM's job, not the retriever's.
+    def test_out_of_domain_query_refused_by_cutoff(self):
+        # The retriever now drops below-cutoff chunks; grounding refusal is
+        # enforced at retrieval time, not left to LLM vibes.
         result = execute_retrieve("sourdough bread recipe", top_k=1)
-        assert "chunks" in result
+        assert result["chunk_count"] == 0
+        assert result.get("no_relevant_evidence") is True
+
+
+class TestRelevanceCutoff:
+    def test_off_topic_query_refused(self):
+        # "sourdough" scores ~0.14 in the live corpus, far below the 0.30 cutoff.
+        result = execute_retrieve("sourdough bread recipe", top_k=4)
+        assert result["chunk_count"] == 0
+        assert result["chunks"] == []
+        assert result["no_relevant_evidence"] is True
+
+    def test_on_topic_query_unaffected(self):
+        # PMF queries score ~0.66 at the top — well clear of the cutoff.
+        result = execute_retrieve("product market fit survey", top_k=3)
+        assert result["chunk_count"] > 0
+        assert "no_relevant_evidence" not in result
+        assert all(c["relevance_score"] >= 0.30 for c in result["chunks"])
+
+    def test_cutoff_zero_restores_legacy_nearest_neighbor(self):
+        result = execute_retrieve("sourdough bread recipe", top_k=2, relevance_cutoff=0.0)
+        assert result["chunk_count"] == 2
+        assert "no_relevant_evidence" not in result
+
+    def test_partial_filter_keeps_strong_chunks_only(self):
+        # Growth-loops query returns mixed scores (0.75 ... 0.47) — nothing is
+        # dropped; verify scores remain sorted descending.
+        result = execute_retrieve("growth loops vs funnels activation", top_k=4)
+        scores = [c["relevance_score"] for c in result["chunks"]]
+        assert scores == sorted(scores, reverse=True)
+        assert "no_relevant_evidence" not in result
+
+    def test_extreme_cutoff_drops_everything(self):
+        result = execute_retrieve("growth loops", top_k=3, relevance_cutoff=0.99)
+        assert result["chunk_count"] == 0
+        assert result["no_relevant_evidence"] is True
 
 
 class TestPrdGenerator:

@@ -26,8 +26,12 @@ CORE OPERATING PRINCIPLES:
    - Cite your sources clearly with the guest name and episode (e.g. "According to Casey Winters in Ep #42...").
 
 2. EXPLICIT REFUSAL ON UNGROUNDED QUERIES:
-   - If the user asks about an out-of-domain topic (cooking recipes, weather, generic code), explicitly state:
+   - The retrieve tool already filters out low-relevance matches and reports
+     `no_relevant_evidence: true` when nothing clears the threshold. When that
+     flag is set (or no transcripts are found), you MUST explicitly refuse:
      "I couldn't find any discussion about this topic in Lenny's podcast transcript corpus. I only provide insights grounded in Lenny's podcast episodes."
+   - NEVER answer off-topic questions from general knowledge, and NEVER invent
+     citations or guests. No evidence means refusal — not a best guess.
 
 3. SPECIALIZED PRODUCT TOOLS:
    - Use `prd_generator` when asked for a PRD, product spec, or feature requirements.
@@ -109,6 +113,12 @@ class AgentManager:
                 formatted_chunks.append(
                     f"[{idx}] GUEST: {ch['guest']} | EPISODE: {ch['episode_title']} (Ep #{ch['episode_number']})\n"
                     f"EXCERPT: {ch['excerpt']}\n"
+                )
+            if retrieval_res.get("no_relevant_evidence"):
+                return (
+                    "NO_RELEVANT_EVIDENCE: no transcript chunks met the relevance "
+                    "threshold for this query. Per your instructions, you MUST refuse "
+                    "to answer this topic from general knowledge."
                 )
             return "\n---\n".join(formatted_chunks) if formatted_chunks else "No relevant transcripts found."
 
