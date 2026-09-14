@@ -44,7 +44,7 @@ EVAL_CASES = [
     # ---------- retrieval: on-topic questions must surface the right episodes ----------
     EvalCase("pmf_survey", "retrieval",
              "How did Rahul Vohra measure product-market fit at Superhuman?",
-             expect_episodes=[64], expect_guests=["Rahul Vohra"],
+             expect_episodes=[11], expect_guests=["Rahul Vohra"],
              poison_episodes=[104], min_hits=2),
     EvalCase("lno_framework", "retrieval",
              "What is Shreyas Doshi's LNO framework for task management?",
@@ -71,7 +71,7 @@ EVAL_CASES = [
              poison_episodes=[100], min_hits=1),
     EvalCase("north_star", "retrieval",
              "How do I choose the right North Star metric for my product?",
-             expect_episodes=[64, 78], min_hits=1),
+             expect_episodes=[11, 78], min_hits=1),
     EvalCase("retention", "retrieval",
              "How do I improve user retention in a SaaS product?",
              expect_episodes=[52, 42, 95], min_hits=1),
@@ -89,13 +89,13 @@ EVAL_CASES = [
              poison_episodes=[52], min_hits=1),
     EvalCase("leading_lagging", "retrieval",
              "What is the difference between leading and lagging indicators?",
-             expect_episodes=[64, 78], min_hits=1),
+             expect_episodes=[11, 78], min_hits=1),
     EvalCase("hxc_segment", "retrieval",
              # KNOWN GAP: jargon phrasing scores 0.602 vs the 0.62 gate (the
              # off-topic ceiling is 0.579, so the gate cannot be lowered).
              # Adding PMF-survey context lifts it to 0.659 and it passes.
              "What are high-expectation customers and how do you identify them?",
-             expect_episodes=[64], expect_guests=["Rahul Vohra"],
+             expect_episodes=[11], expect_guests=["Rahul Vohra"],
              min_hits=1),
     EvalCase("positioning_vs_category", "retrieval",
              "When should you choose a new market category versus positioning within one?",
@@ -107,7 +107,7 @@ EVAL_CASES = [
              min_hits=1),
     EvalCase("pmf_paraphrase", "retrieval",
              "how can I tell if people would be really sad if my product disappeared?",
-             expect_episodes=[64], expect_guests=["Rahul Vohra"],
+             expect_episodes=[11], expect_guests=["Rahul Vohra"],
              min_hits=1),
 
     # ---------- refusal: off-domain questions must produce zero chunks ----------
@@ -135,7 +135,7 @@ EVAL_CASES = [
     # ---------- citation: correct-episode sources must outrank the rest ----------
     EvalCase("cite_pmf", "citation",
              "How did Rahul Vohra measure product-market fit at Superhuman?",
-             expect_guests=["Rahul Vohra"], expect_episodes=[64], poison_episodes=[104]),
+             expect_guests=["Rahul Vohra"], expect_episodes=[11], poison_episodes=[104]),
     EvalCase("cite_loops", "citation",
              "Explain growth loops versus funnels with Casey Winters.",
              expect_guests=["Casey Winters"], expect_episodes=[42], poison_episodes=[104]),
