@@ -5,6 +5,17 @@ import ReactMarkdown from 'react-markdown';
  * Icons used throughout the app (inline SVG components for zero-dependency icons).
  */
 export const Icons = {
+  Sun: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  ),
+  Moon: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+    </svg>
+  ),
   Logo: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -128,6 +139,8 @@ export function Sidebar({
   onProviderChange,
   providerStatus,
   corpus,
+  theme,
+  onToggleTheme,
 }) {
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -141,6 +154,14 @@ export function Sidebar({
           <h1>Lenny Growth</h1>
           <span className="sidebar-badge">v2.0 · Live</span>
         </div>
+        <button
+          className="theme-toggle"
+          onClick={onToggleTheme}
+          title={theme === 'cream' ? 'Switch to dark cocoa' : 'Switch to cream'}
+          aria-label="Toggle color theme"
+        >
+          {theme === 'cream' ? <Icons.Moon /> : <Icons.Sun />}
+        </button>
       </div>
 
       <div className="sidebar-action">

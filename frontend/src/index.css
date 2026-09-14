@@ -76,6 +76,16 @@
   --shadow-glow: 0 0 20px rgba(192, 88, 0, 0.18);
   --shadow-glow-lg: 0 0 40px rgba(192, 88, 0, 0.25);
 
+  /* Theme-aware extras (overridden by [data-theme='cream']) */
+  --scrollbar-thumb: rgba(253, 251, 212, 0.1);
+  --scrollbar-thumb-hover: rgba(253, 251, 212, 0.18);
+  --overlay-scrim: rgba(23, 16, 10, 0.5);
+  --overlay-modal: rgba(23, 16, 10, 0.7);
+  --code-surface: #241a10;
+  --user-bubble-bg: var(--bg-tertiary);
+  --chip-surface: var(--bg-tertiary);
+  --header-glass: rgba(23, 16, 10, 0.8);
+
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
@@ -112,6 +122,64 @@ body {
   width: 100vw;
 }
 
+/* ============================================
+   CREAM THEME — same Chocolate Truffle palette,
+   warm light surfaces instead of dark cocoa.
+   ============================================ */
+[data-theme='cream'] {
+  --bg-primary: #faf7ec;
+  --bg-secondary: #f3eeda;
+  --bg-tertiary: #ece5cc;
+  --bg-elevated: #fdfbd4;
+  --bg-glass: rgba(253, 251, 212, 0.75);
+  --bg-glass-hover: rgba(253, 251, 212, 0.9);
+
+  /* Accents keep their identity; deep chocolate replaces caramel for
+     text-level accent contrast on light surfaces. */
+  --accent-primary: #713600;
+  --accent-secondary: #9a4a04;
+  --accent-tertiary: #38240d;
+  --accent-glow: rgba(192, 88, 0, 0.12);
+  --accent-gradient: linear-gradient(135deg, #c05800, #a84e02, #713600);
+  --accent-gradient-hover: linear-gradient(135deg, #d97a1f, #c05800, #9a4a04);
+
+  --text-primary: #38240d;
+  --text-secondary: #6b5335;
+  --text-tertiary: #99855f;
+  --text-accent: #9a4a04;
+  --text-inverse: #fdfbd4;
+
+  --border-subtle: rgba(56, 36, 13, 0.08);
+  --border-default: rgba(56, 36, 13, 0.16);
+  --border-hover: rgba(192, 88, 0, 0.5);
+  --border-active: rgba(113, 54, 0, 0.7);
+
+  --success: #7a6b1d;
+  --success-bg: rgba(184, 165, 66, 0.16);
+  --warning: #9a6d12;
+  --warning-bg: rgba(217, 164, 65, 0.16);
+  --error: #a8492c;
+  --error-bg: rgba(217, 112, 79, 0.14);
+  --info: #8a6a3b;
+  --info-bg: rgba(201, 168, 118, 0.18);
+
+  --shadow-sm: 0 1px 2px rgba(56, 36, 13, 0.1);
+  --shadow-md: 0 4px 12px rgba(56, 36, 13, 0.12);
+  --shadow-lg: 0 8px 32px rgba(56, 36, 13, 0.16);
+  --shadow-glow: 0 0 20px rgba(192, 88, 0, 0.12);
+  --shadow-glow-lg: 0 0 40px rgba(192, 88, 0, 0.16);
+
+  --scrollbar-thumb: rgba(56, 36, 13, 0.18);
+  --scrollbar-thumb-hover: rgba(56, 36, 13, 0.3);
+  --overlay-scrim: rgba(56, 36, 13, 0.35);
+  --overlay-modal: rgba(56, 36, 13, 0.45);
+  --code-surface: #f0e9d2;
+  --user-bubble-bg: #f0e9d2;
+  --chip-surface: #f0e9d2;
+  --header-glass: rgba(250, 247, 236, 0.85);
+  color-scheme: light;
+}
+
 #root {
   height: 100vh;
   width: 100vw;
@@ -126,11 +194,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--scrollbar-thumb);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ============================================
@@ -171,7 +239,7 @@ body {
 }
 
 .sessions-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb);
 }
 
 .sidebar.collapsed {
@@ -188,6 +256,33 @@ body {
   align-items: center;
   gap: var(--space-md);
   min-height: var(--header-height);
+}
+
+.theme-toggle {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--chip-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.theme-toggle svg {
+  width: 15px;
+  height: 15px;
 }
 
 .sidebar-logo {
@@ -582,7 +677,7 @@ body {
   align-items: center;
   padding: 0 var(--space-xl);
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(23, 16, 10, 0.8);
+  background: var(--header-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   gap: var(--space-md);
@@ -774,7 +869,7 @@ body {
 
 .user-bubble {
   max-width: 78%;
-  background: var(--bg-tertiary);
+  background: var(--user-bubble-bg);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   padding: 10px 16px;
@@ -858,7 +953,7 @@ body {
 }
 
 .message-content code {
-  background: var(--bg-tertiary);
+  background: var(--code-surface);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
@@ -867,7 +962,7 @@ body {
 }
 
 .message-content pre {
-  background: var(--bg-tertiary);
+  background: var(--code-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
@@ -936,7 +1031,7 @@ body {
   align-items: center;
   gap: var(--space-xs);
   padding: 4px 10px;
-  background: var(--bg-tertiary);
+  background: var(--chip-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   font-size: 0.72rem;
@@ -1125,7 +1220,7 @@ body {
 .input-area {
   padding: var(--space-lg) var(--space-xl) var(--space-xl);
   border-top: 1px solid var(--border-subtle);
-  background: rgba(23, 16, 10, 0.9);
+  background: var(--header-glass);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -1499,7 +1594,7 @@ body {
     position: fixed;
     inset: 0;
     z-index: 25; /* below sidebar (30), above content */
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-scrim);
     border: none;
     padding: 0;
     cursor: pointer;
@@ -1677,7 +1772,7 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--overlay-modal);
   backdrop-filter: blur(6px);
   z-index: 100;
   display: flex;

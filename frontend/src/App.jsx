@@ -57,6 +57,20 @@ export default function App() {
   const [guestFilter, setGuestFilter] = useState(null);
   const [episodeFilter, setEpisodeFilter] = useState(null);
 
+  // Theme state ('dark' cocoa | 'cream'), persisted per browser
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('lenny-theme') || 'dark'; } catch { return 'dark'; }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('lenny-theme', theme); } catch { /* private mode */ }
+  }, [theme]);
+
+  const handleToggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'dark' ? 'cream' : 'dark'));
+  }, []);
+
   // Toast
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
@@ -402,6 +416,8 @@ export default function App() {
         onProviderChange={handleProviderChange}
         providerStatus={providerStatus}
         corpus={corpus}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Chat Area */}
