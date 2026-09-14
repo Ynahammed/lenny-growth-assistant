@@ -11,34 +11,37 @@
 }
 
 :root {
-  /* Core Palette */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-tertiary: #1a1a26;
-  --bg-elevated: #1e1e2e;
-  --bg-glass: rgba(30, 30, 46, 0.6);
-  --bg-glass-hover: rgba(40, 40, 60, 0.7);
+  /* Core Palette — Chocolate Truffle
+     #38240D dark cocoa (backgrounds) · #713600 chocolate (surfaces)
+     #C05800 caramel (primary accent) · #FDFBD4 cream (highlights/text) */
+  --bg-primary: #17100a;
+  --bg-secondary: #1f1610;
+  --bg-tertiary: #291d14;
+  --bg-elevated: #2f2218;
+  --bg-glass: rgba(47, 34, 24, 0.6);
+  --bg-glass-hover: rgba(58, 42, 29, 0.7);
 
-  /* Accent Gradient */
-  --accent-primary: #8b5cf6;
-  --accent-secondary: #a78bfa;
-  --accent-tertiary: #c4b5fd;
-  --accent-glow: rgba(139, 92, 246, 0.15);
-  --accent-gradient: linear-gradient(135deg, #8b5cf6, #6366f1, #818cf8);
-  --accent-gradient-hover: linear-gradient(135deg, #a78bfa, #818cf8, #93c5fd);
+  /* Accent — caramel primary, cocoa secondary, cream tertiary */
+  --accent-primary: #c05800;
+  --accent-secondary: #d97a1f;
+  --accent-tertiary: #fdfbd4;
+  --accent-deep: #713600;
+  --accent-glow: rgba(192, 88, 0, 0.18);
+  --accent-gradient: linear-gradient(135deg, #c05800, #9a4a04, #713600);
+  --accent-gradient-hover: linear-gradient(135deg, #d97a1f, #c05800, #9a4a04);
 
   /* Text */
-  --text-primary: #f0f0f5;
-  --text-secondary: #a0a0b8;
-  --text-tertiary: #6b6b80;
-  --text-accent: #c4b5fd;
-  --text-inverse: #0a0a0f;
+  --text-primary: #fdfbd4;
+  --text-secondary: #cfc4a8;
+  --text-tertiary: #8f8368;
+  --text-accent: #e8a04f;
+  --text-inverse: #241708;
 
   /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-hover: rgba(139, 92, 246, 0.3);
-  --border-active: rgba(139, 92, 246, 0.5);
+  --border-subtle: rgba(253, 251, 212, 0.06);
+  --border-default: rgba(253, 251, 212, 0.12);
+  --border-hover: rgba(192, 88, 0, 0.45);
+  --border-active: rgba(217, 122, 31, 0.65);
 
   /* Status */
   --success: #34d399;
@@ -70,8 +73,8 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
-  --shadow-glow-lg: 0 0 40px rgba(139, 92, 246, 0.2);
+  --shadow-glow: 0 0 20px rgba(192, 88, 0, 0.18);
+  --shadow-glow-lg: 0 0 40px rgba(192, 88, 0, 0.25);
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -202,7 +205,7 @@ body {
 .sidebar-logo svg {
   width: 18px;
   height: 18px;
-  color: white;
+  color: var(--accent-tertiary);
 }
 
 .sidebar-brand {
@@ -232,7 +235,7 @@ body {
   background: var(--accent-gradient);
   border: none;
   border-radius: var(--radius-md);
-  color: white;
+  color: var(--accent-tertiary);
   font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 600;
@@ -413,7 +416,7 @@ body {
 }
 
 .clear-all-btn.confirm {
-  color: white;
+  color: var(--accent-tertiary);
   background: var(--error);
 }
 
@@ -448,7 +451,7 @@ body {
 /* Inline two-step confirm state */
 .session-item .session-delete.confirm {
   background: var(--error);
-  color: white;
+  color: var(--accent-tertiary);
   font-size: 0.62rem;
   font-weight: 700;
   padding: 3px 7px;
@@ -688,7 +691,7 @@ body {
 .welcome-icon svg {
   width: 32px;
   height: 32px;
-  color: white;
+  color: var(--accent-tertiary);
 }
 
 .welcome-screen h2 {
@@ -801,7 +804,7 @@ body {
 
 .message-avatar.assistant {
   background: var(--accent-gradient);
-  color: white;
+  color: var(--accent-tertiary);
   box-shadow: var(--shadow-glow);
 }
 
@@ -1002,7 +1005,7 @@ body {
 }
 
 .artifact-type-badge.essay {
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(192, 88, 0, 0.18);
   color: var(--accent-secondary);
 }
 
@@ -1185,7 +1188,7 @@ body {
 
 .send-btn.active {
   background: var(--accent-gradient);
-  color: white;
+  color: var(--accent-tertiary);
   box-shadow: var(--shadow-glow);
 }
 
@@ -1423,7 +1426,7 @@ body {
 .toast-action:hover {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
-  color: white;
+  color: var(--accent-tertiary);
 }
 
 .toast {
@@ -1639,7 +1642,7 @@ body {
 .follow-up-pill:hover {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
-  color: white;
+  color: var(--accent-tertiary);
   transform: translateY(-1px);
   box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
 }
@@ -1813,7 +1816,7 @@ body {
 
 .modal-action-btn {
   background: var(--accent-primary);
-  color: white;
+  color: var(--accent-tertiary);
   border: none;
   padding: 6px 16px;
   border-radius: var(--radius-sm);
@@ -1843,15 +1846,15 @@ body {
 }
 
 .artifact-type-badge.growth_audit {
-  background: rgba(139, 92, 246, 0.15);
-  color: #c084fc;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(192, 88, 0, 0.18);
+  color: var(--accent-secondary);
+  border: 1px solid rgba(192, 88, 0, 0.4);
 }
 
 .sidebar-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(192, 88, 0, 0.2);
   color: var(--accent-secondary);
   padding: 2px 6px;
   border-radius: 9999px;
