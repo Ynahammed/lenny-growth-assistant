@@ -1,0 +1,312 @@
+"""
+Agent Manager & Multi-Tool Orchestration Engine with Streaming Support.
+"""
+import logging
+import asyncio
+from typing import List, Dict, Any, Optional, AsyncGenerator
+from app.config import settings
+from app.llm.provider import get_provider, LLMProvider, LLMResponse
+from app.agents.tools import AVAILABLE_TOOLS
+from app.agents.tools.retrieve import execute_retrieve
+from app.agents.tools.ship30_essay import execute_ship30_essay
+from app.agents.tools.artifact_gen import execute_artifact_gen
+from app.agents.tools.prd_generator import execute_prd_generator
+from app.agents.tools.pre_mortem import execute_pre_mortem
+from app.agents.tools.growth_audit import execute_growth_audit
+
+logger = logging.getLogger("lenny_growth.agents.manager")
+
+SYSTEM_PROMPT = """
+You are the Lenny Growth Assistant, an AI expert trained exclusively on transcripts from Lenny's Podcast and Newsletter.
+You provide precise, battle-tested advice for Product Managers, Growth Leads, and Founders.
+
+CORE OPERATING PRINCIPLES:
+1. STRICT TRANSCRIPT GROUNDING:
+   - Answer questions using evidence from Lenny's podcast transcript corpus.
+   - Cite your sources clearly with the guest name and episode (e.g. "According to Casey Winters in Ep #42...").
+
+2. EXPLICIT REFUSAL ON UNGROUNDED QUERIES:
+   - If the user asks about an out-of-domain topic (cooking recipes, weather, generic code), explicitly state:
+     "I couldn't find any discussion about this topic in Lenny's podcast transcript corpus. I only provide insights grounded in Lenny's podcast episodes."
+
+3. SPECIALIZED PRODUCT TOOLS:
+   - Use `prd_generator` when asked for a PRD, product spec, or feature requirements.
+   - Use `pre_mortem_simulator` when asked for a Pre-Mortem or launch failure risk analysis.
+   - Use `growth_audit` when analyzing funnel metrics, churn, or retention drop-offs.
+   - Use `ship30_essay` when asked for an atomic essay or publishable summary.
+"""
+
+
+def generate_suggested_follow_ups(user_message: str, response_text: str) -> List[str]:
+    """Generates 2-3 contextual follow-up prompt pills based on the response content."""
+    text_lower = (user_message + " " + response_text).lower()
+    
+    if "lno" in text_lower or "shreyas" in text_lower:
+        return [
+            "How do I run a Shreyas Doshi Pre-Mortem before launch?",
+            "What does 'high-agency' mean in product management?",
+            "Write a Ship30 essay on LNO task prioritization."
+        ]
+    elif "pmf" in text_lower or "superhuman" in text_lower or "rahul" in text_lower:
+        return [
+            "How does Rahul Vohra segment High-Expectation Customers (HXC)?",
+            "What is the 100ms rule for product speed?",
+            "Generate a PRD for a customer onboarding experiment."
+        ]
+    elif "retention" in text_lower or "gustaf" in text_lower or "yc" in text_lower:
+        return [
+            "How do I choose the right North Star Metric?",
+            "Audit my B2B SaaS signup funnel drop-offs.",
+            "Explain growth loops vs linear funnels by Casey Winters."
+        ]
+    elif "jtbd" in text_lower or "moesta" in text_lower:
+        return [
+            "How do you reduce customer Anxiety during onboarding?",
+            "What are the 4 Forces of Progress in JTBD?",
+            "Create a PRD using Jobs-to-be-Done principles."
+        ]
+    elif "casey" in text_lower or "activation" in text_lower or "loop" in text_lower:
+        return [
+            "What is the difference between supply-side and demand-side activation?",
+            "What question determines if you have a real growth loop?",
+            "Write a Ship30 atomic essay on modern marketplace activation."
+        ]
+    else:
+        return [
+            "Explain Shreyas Doshi's LNO framework for PM time management.",
+            "How does Rahul Vohra measure Product-Market Fit quantitatively?",
+            "What are the 3 pillars of B2B Product-Led Growth?"
+        ]
+
+
+class AgentManager:
+    """Manages conversational agent execution, multi-tool calling, citations, and streaming."""
+
+    def __init__(self, provider_type: Optional[str] = None):
+        self.provider_type = provider_type or settings.LLM_PROVIDER
+        self.provider: LLMProvider = get_provider(self.provider_type)
+
+    def _execute_tool(self, tool_call, user_message: str, collected_sources: list, generated_artifacts: list) -> str:
+        name = tool_call.name
+        args = tool_call.arguments
+        logger.info(f"Agent executing tool '{name}' with args: {args}")
+
+        if name == "retrieve":
+            query = args.get("query") or args.get("q") or args.get("topic") or user_message
+            if isinstance(query, (int, float)):
+                query = user_message
+            top_k = args.get("top_k", settings.TOP_K_RETRIEVAL)
+            if not isinstance(top_k, int):
+                top_k = settings.TOP_K_RETRIEVAL
+            retrieval_res = execute_retrieve(query=str(query), top_k=top_k)
+
+            for chunk in retrieval_res.get("chunks", []):
+                if not any(s.get("chunk_id") == chunk.get("chunk_id") for s in collected_sources):
+                    collected_sources.append(chunk)
+
+            formatted_chunks = []
+            for idx, ch in enumerate(retrieval_res.get("chunks", []), 1):
+                formatted_chunks.append(
+                    f"[{idx}] GUEST: {ch['guest']} | EPISODE: {ch['episode_title']} (Ep #{ch['episode_number']})\n"
+                    f"EXCERPT: {ch['excerpt']}\n"
+                )
+            return "\n---\n".join(formatted_chunks) if formatted_chunks else "No relevant transcripts found."
+
+        elif name == "prd_generator":
+            title = args.get("title", "Growth Feature PRD")
+            prob = args.get("problem_statement", user_message)
+            persona = args.get("target_persona", "High-Expectation Customer")
+            goals = args.get("goals_and_metrics", "Increase D30 Retention and Time-to-Value")
+            stories = args.get("user_stories", "Core user onboarding & activation flow")
+            non_goals = args.get("non_goals", "Custom enterprise integrations in v1")
+            
+            art = execute_prd_generator(title=title, problem_statement=prob, target_persona=persona, goals_and_metrics=goals, user_stories=stories, non_goals=non_goals)
+            generated_artifacts.append(art)
+            return f"PRD '{title}' generated successfully."
+
+        elif name == "pre_mortem_simulator":
+            init = args.get("initiative_name", "Feature Launch")
+            ctx = args.get("launch_context", user_message)
+            modes = args.get("top_failure_modes", "")
+            art = execute_pre_mortem(initiative_name=init, launch_context=ctx, top_failure_modes=modes)
+            generated_artifacts.append(art)
+            return f"Pre-Mortem for '{init}' conducted and rendered."
+
+        elif name == "growth_audit":
+            bm = args.get("business_model", "B2B SaaS / PLG")
+            metrics = args.get("funnel_metrics", user_message)
+            concern = args.get("primary_concern", "Funnel drop-offs and retention leaks")
+            art = execute_growth_audit(business_model=bm, funnel_metrics=metrics, primary_concern=concern)
+            generated_artifacts.append(art)
+            return f"Growth Audit for '{bm}' completed."
+
+        elif name == "ship30_essay":
+            topic = args.get("topic", user_message)
+            insights = args.get("core_insights", "")
+            target_aud = args.get("target_audience", "Product Managers")
+            res = execute_ship30_essay(topic=topic, core_insights=insights, target_audience=target_aud)
+            generated_artifacts.append({
+                "title": f"Ship30 Essay: {topic}",
+                "artifact_type": "essay",
+                "content": res.get("essay_content", "")
+            })
+            return f"Ship30 atomic essay generated."
+
+        elif name == "artifact_gen":
+            title = args.get("title", "Generated Growth Artifact")
+            art_type = args.get("artifact_type", "markdown")
+            content = args.get("content", "")
+            art_res = execute_artifact_gen(title=title, artifact_type=art_type, content=content)
+            generated_artifacts.append(art_res)
+            return f"Artifact '{title}' created."
+
+        return "Tool completed."
+
+    async def execute_turn(
+        self,
+        conversation_history: List[Dict[str, Any]],
+        user_message: str,
+        max_tool_iterations: int = 3
+    ) -> Dict[str, Any]:
+        messages = list(conversation_history)
+        messages.append({"role": "user", "content": user_message})
+
+        collected_sources: List[Dict[str, Any]] = []
+        generated_artifacts: List[Dict[str, Any]] = []
+        tool_results_history = list(messages)
+
+        for iteration in range(max_tool_iterations):
+            current_tools = None if (collected_sources or iteration > 0) else AVAILABLE_TOOLS
+            try:
+                response: LLMResponse = await self.provider.generate(
+                    messages=tool_results_history,
+                    system_prompt=SYSTEM_PROMPT,
+                    tools=current_tools
+                )
+            except Exception as e:
+                logger.error(f"LLM Provider error: {e}", exc_info=True)
+                return {
+                    "role": "assistant",
+                    "content": f"⚠️ Communication error with model provider ({self.provider.provider_name}): {str(e)}",
+                    "sources": [],
+                    "artifacts": [],
+                    "follow_ups": [],
+                    "provider": self.provider.provider_name,
+                    "model": self.provider.model_name
+                }
+
+            if not response.tool_calls:
+                content_text = response.content.strip()
+                follow_ups = generate_suggested_follow_ups(user_message, content_text)
+                return {
+                    "role": "assistant",
+                    "content": content_text,
+                    "sources": collected_sources,
+                    "artifacts": generated_artifacts,
+                    "follow_ups": follow_ups,
+                    "provider": self.provider.provider_name,
+                    "model": self.provider.model_name
+                }
+
+            for tool_call in response.tool_calls:
+                tool_output = self._execute_tool(tool_call, user_message, collected_sources, generated_artifacts)
+                tool_results_history.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": tool_call.name,
+                    "content": tool_output
+                })
+
+        final_content = response.content.strip() if response and response.content else ""
+        if not final_content and collected_sources:
+            synthesis_chunks = [
+                f"**{s.get('guest')}** (*{s.get('episode_title')}*, Ep #{s.get('episode_number')}):\n> \"{s.get('excerpt')}\""
+                for s in collected_sources[:3]
+            ]
+            final_content = "Based on Lenny's Podcast transcripts:\n\n" + "\n\n".join(synthesis_chunks)
+        elif not final_content:
+            final_content = "I could not find any discussion about this topic in Lenny's podcast transcript corpus."
+
+        follow_ups = generate_suggested_follow_ups(user_message, final_content)
+        return {
+            "role": "assistant",
+            "content": final_content,
+            "sources": collected_sources,
+            "artifacts": generated_artifacts,
+            "follow_ups": follow_ups,
+            "provider": self.provider.provider_name,
+            "model": self.provider.model_name
+        }
+
+    async def execute_turn_stream(
+        self,
+        conversation_history: List[Dict[str, Any]],
+        user_message: str
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Streaming execution yielding real-time events, tool status, tokens, sources, and artifacts."""
+        messages = list(conversation_history)
+        messages.append({"role": "user", "content": user_message})
+
+        collected_sources: List[Dict[str, Any]] = []
+        generated_artifacts: List[Dict[str, Any]] = []
+        tool_results_history = list(messages)
+
+        yield {"type": "status", "status": "Thinking & querying podcast transcripts..."}
+
+        # Step 1: Tool check
+        try:
+            initial_resp: LLMResponse = await self.provider.generate(
+                messages=tool_results_history,
+                system_prompt=SYSTEM_PROMPT,
+                tools=AVAILABLE_TOOLS
+            )
+        except Exception as e:
+            yield {"type": "error", "message": f"Provider error ({self.provider.provider_name}): {str(e)}"}
+            return
+
+        if initial_resp.tool_calls:
+            for tc in initial_resp.tool_calls:
+                yield {"type": "tool_start", "tool": tc.name}
+                tool_out = self._execute_tool(tc, user_message, collected_sources, generated_artifacts)
+                tool_results_history.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "name": tc.name,
+                    "content": tool_out
+                })
+                yield {"type": "tool_end", "tool": tc.name, "sources_count": len(collected_sources)}
+
+        if collected_sources:
+            yield {"type": "sources", "sources": collected_sources}
+
+        if generated_artifacts:
+            yield {"type": "artifacts", "artifacts": generated_artifacts}
+
+        # Step 2: Stream final text synthesis
+        yield {"type": "status", "status": "Synthesizing grounded response..."}
+        full_text = ""
+
+        try:
+            async for token in self.provider.generate_stream(
+                messages=tool_results_history,
+                system_prompt=SYSTEM_PROMPT,
+                tools=None
+            ):
+                full_text += token
+                yield {"type": "token", "token": token}
+        except Exception as e:
+            logger.error(f"Streaming token error: {e}", exc_info=True)
+            if not full_text:
+                full_text = "I have analyzed the transcripts and retrieved relevant insights."
+                yield {"type": "token", "token": full_text}
+
+        follow_ups = generate_suggested_follow_ups(user_message, full_text)
+        yield {
+            "type": "done",
+            "full_content": full_text,
+            "sources": collected_sources,
+            "artifacts": generated_artifacts,
+            "follow_ups": follow_ups,
+            "provider": self.provider.provider_name,
+            "model": self.provider.model_name
+        }

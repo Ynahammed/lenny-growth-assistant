@@ -1,0 +1,29 @@
+---
+guest: Shreyas Doshi
+episode_title: High-Agency Product Management, The LNO Framework, and Pre-Mortems
+episode_number: 78
+topic_tags: [LNO framework, prioritization, high agency, strategy, pre-mortems, execution]
+---
+
+Lenny: Today I'm joined by Shreyas Doshi, who has led product at Stripe, Twitter, Yahoo, and Google. Shreyas, your LNO Framework is one of the most widely shared frameworks among PMs. Can you explain what LNO stands for and how PMs should use it to manage their time and energy?
+
+Shreyas Doshi: Absolutely, Lenny. Most PMs suffer from chronic burnout because they apply the same 100% perfectionist effort to every single task on their plate. That is disastrous for your career. The LNO framework categorizes work into three buckets based on leverage:
+
+1. L is for Leverage tasks (10x return on effort).
+These are high-leverage activities where the difference between mediocre execution and exceptional execution changes the trajectory of the product or company. Examples: product strategy, writing the core PRD for a flagship feature, hiring key team members, customer insight deep dives. For 'L' tasks, you must deliberately over-invest time, achieve creative flow, and strive for 100% excellence.
+
+2. N is for Neutral tasks (1x return on effort).
+These are standard operational duties that just need to be done competently. Examples: sprint planning, routine status updates, responding to standard stakeholder queries, updating Jira tickets. Doing an 'N' task with 100% perfection provides zero additional ROI compared to doing it at 80% quality. Get it done quickly, cleanly, and move on.
+
+3. O is for Overhead tasks (<0.1x return on effort).
+These are low-value administrative overheads, compliance checklists, repetitive meetings, or minor administrative forms. For 'O' tasks, your goal is to do them at the minimum acceptable threshold—or delegate, automate, or eliminate them entirely.
+
+Lenny: What is the biggest trap with LNO?
+
+Shreyas Doshi: The trap is letting 'O' and 'N' tasks consume your best cognitive hours (the morning), leaving you exhausted when it comes time to do 'L' work. High-agency PMs block out sacred deep work blocks for 'L' tasks and batch 'N' and 'O' tasks into dedicated administrative windows.
+
+Lenny: You also advocate strongly for Pre-Mortems in product strategy. How do you run an effective pre-mortem?
+
+Shreyas Doshi: A pre-mortem is conducted *before* you write a single line of code. You gather the entire cross-functional team (Product, Engineering, Design, Sales, Support) and say: "Imagine it is one year from today. The product we launched was an utter catastrophe. It failed completely. Write down the top 3 reasons why it failed."
+
+When people have psychological safety to assume failure, they reveal the unstated risks, technical debt, and misaligned incentives they were too polite to voice earlier. You then rank those failure modes and proactively engineer mitigations into your roadmap.

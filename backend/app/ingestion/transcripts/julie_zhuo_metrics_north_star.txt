@@ -1,0 +1,19 @@
+---
+guest: Julie Zhuo
+episode_title: Metrics That Matter, Leading vs Lagging Indicators, and Product Craft
+episode_number: 64
+topic_tags: [metrics, north star, product design, leadership, execution, quality]
+---
+
+Lenny: Today we have Julie Zhuo, former VP of Product Design at Facebook, author of 'The Making of a Manager', and co-founder of Sundial. Julie, PMs often get lost in metric dashboards. How do you distinguish between good product metrics and misleading vanity metrics?
+
+Julie Zhuo: A metric is a proxy for human behavior and real-world value. The danger is when teams begin optimizing the proxy rather than the underlying human outcome.
+
+There are three essential categories of metrics every team must maintain:
+1. North Star Metric: The single metric that best captures the core value delivered to your customer (e.g. for Facebook: Daily Active People spending meaningful time; for Airbnb: Nights Booked).
+2. Leading Indicators vs. Lagging Indicators: Revenue and churn are lagging indicators; by the time they move, it's too late. Leading indicators are early user behavioral milestones, such as 'created 3 projects in the first 48 hours' or 'shared a file with 2 teammates'.
+3. Counter Metrics (Guardrail Metrics): If your primary metric is click-through rate, your counter metric must be bounce rate or customer satisfaction (CSAT) to prevent clickbait spam and user degradation.
+
+Lenny: How do you balance rigorous data analysis with intuition and design craft?
+
+Julie Zhuo: Data tells you *what* is happening, but it rarely tells you *why*. That's where user intuition, qualitative interviews, and design craft come in. If an A/B test shows an 8% lift in clicks because you made an unsubscribe button invisible, data says it's a win, but product craft knows it destroys long-term trust.

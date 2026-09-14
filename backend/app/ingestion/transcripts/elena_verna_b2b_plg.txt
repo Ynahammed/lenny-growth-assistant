@@ -1,0 +1,25 @@
+---
+guest: Elena Verna
+episode_title: B2B Product-Led Growth, Monetization Strategy, and Retention Loops
+episode_number: 95
+topic_tags: [PLG, B2B, monetization, pricing, retention loops, virality, self-serve]
+---
+
+Lenny: Welcome back. Today our guest is Elena Verna, interim Head of Growth at Amplitude, Lovable, and advisor to Miro, SurveyMonkey, and Netlify. Elena, how does B2B Product-Led Growth (PLG) actually work at scale?
+
+Elena Verna: PLG is not just putting a "Sign Up Free" button on your homepage. PLG is an organizational alignment where the product itself serves as the primary driver of customer acquisition, retention, and expansion.
+
+There are three foundational pillars in successful B2B PLG:
+1. Low Friction Time-to-Value: The user must be able to experience the core utility of the tool in under five minutes without talking to a sales rep or entering a credit card.
+2. Natural Collaborative Virality: The tool is inherently multi-player. Think Miro, Figma, or Loom. When one user creates value, they naturally invite their peers to collaborate, creating an intra-company viral expansion loop.
+3. Product-Led Sales (PLS) Handshake: PLG does not mean you fire your sales team. Rather, PLG generates product-qualified leads (PQLs). Sales reps reach out only when an account has already hit high product usage thresholds (e.g. 5+ active teammates, high export frequency).
+
+Lenny: What is the most common mistake companies make with freemium and pricing paywalls?
+
+Elena Verna: Paywalling too early or paywalling the wrong metric. If you lock the core value behind a paywall before the user has formed a habit, you kill your acquisition loop. 
+
+Your monetization metric must align directly with the value the customer is extracting. If you sell a collaborative whiteboard (like Miro), charge for active editors or advanced workspace controls, not for viewing or creating the first board. Let them fall in love with the product first. The product is the lead generation engine; monetization happens on usage scale, governance, and enterprise security.
+
+Lenny: How do you think about retention loops in B2B?
+
+Elena Verna: B2B retention is all about data gravity and workflow integration. If your tool stores unique project history or connects with Slack, GitHub, and Jira, switching costs increase exponentially. Habitual usage creates compounding switching friction.

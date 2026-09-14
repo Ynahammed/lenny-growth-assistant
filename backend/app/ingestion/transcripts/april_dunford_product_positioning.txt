@@ -1,0 +1,23 @@
+---
+guest: April Dunford
+episode_title: Obviously Awesome: How to Master Product Positioning, Competitive Alternatives, and Market Categories
+episode_number: 104
+topic_tags: positioning, product marketing, competitive alternatives, differentiated value, market category, ICP
+---
+
+Lenny: April Dunford, author of Obviously Awesome, is here. Why do so many great products fail simply due to bad positioning?
+
+April Dunford: When customers don't understand what your product is, they look for clues in the frame of reference you give them. If you call yourself "email for enterprise", they expect Outlook features and price point. Positioning is the context you set around your product so your target customers instantly understand why you're uniquely valuable.
+
+Lenny: What are the 5 essential components of effective positioning?
+
+April Dunford: You must answer these 5 questions in strict sequential order:
+1. Competitive Alternatives: What would customers do if your product did not exist? (Often it's not a competitor, but "do nothing" or an Excel spreadsheet).
+2. Unique Capabilities: What features/capabilities do you have that the alternatives cannot deliver?
+3. Differentiated Value: What business or emotional value do those unique capabilities unlock for the customer? (Features tell, value sells).
+4. Best-Fit Customer Profile (ICP): Who cares intensely about that specific differentiated value?
+5. Market Category: What context or market frame makes that value obvious to those customers?
+
+Lenny: What is the biggest positioning blunder founders make?
+
+April Dunford: Starting with the market category first ("We are an AI-powered CRM") before figuring out what they do uniquely better than competitive alternatives. Always start with competitive alternatives first.

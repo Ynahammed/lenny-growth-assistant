@@ -1,0 +1,41 @@
+# ===== Secrets — NEVER COMMIT =====
+.env
+.env.*
+*.pem
+*.key
+**/.env
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# ===== Databases & vector stores (local state, re-creatable) =====
+*.db
+*.sqlite3
+chroma_db/
+backend/chroma_db/
+
+# ===== Node / frontend =====
+node_modules/
+frontend/dist/
+*.local
+
+# ===== Logs & temp =====
+*.log
+*.log.err
+.freebuff/
+agent-transcripts/
+
+# ===== OS / editor =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,24 @@
+---
+guest: Lenny Rachitsky
+episode_title: Solving the Cold Start Problem in Marketplaces & PM Career Ladders
+episode_number: 100
+topic_tags: [marketplaces, cold start, supply constraint, career, liquidity, growth]
+---
+
+Lenny: In this special episode, I'm breaking down the synthesis of over 100 marketplace interviews and my research on kickstarting two-sided networks.
+
+The Cold Start Problem is the hardest phase in any marketplace lifecycle: buyers won't join without sellers, and sellers won't join without buyers. Almost every legendary marketplace (Airbnb, Uber, DoorDash, Etsy) solved this with three universal tactical patterns:
+
+1. Constrain the Geospatial or Category Footprint
+Do not launch nationally or globally on Day 1. Constrain your surface area aggressively until you achieve hyper-dense local liquidity. Uber started only in San Francisco with black cars; DoorDash started with restaurants in Palo Alto; Airbnb focused on high-demand design conference dates in SF and NYC. Reaching 80% liquidity in one zip code is infinitely better than 1% liquidity across an entire country.
+
+2. Subsidize and Manually Seed Supply First
+In 90% of marketplaces, supply is the constrained side. Supply is harder to acquire and slower to activate. Successful founders do things that don't scale: they manually onboard supply, take professional photos for hosts (Airbnb), subsidize hourly wages for drivers (Uber), or buy food directly and deliver it themselves (DoorDash).
+
+3. Create Single-Player Mode Utility ("Come for the tool, stay for the network")
+Give one side of the marketplace a standalone software tool that delivers immediate utility even if zero buyers or peers exist yet. OpenTable gave restaurants reservation management software before opening their diner booking network. Honeybook gave event freelancers invoicing tools before creating an organic client marketplace.
+
+When measuring marketplace health, focus on Liquidity Quality:
+- Match Rate: % of searches that result in a confirmed transaction.
+- Time-to-Match: How many minutes/hours until a buyer request is accepted by a seller.
+- Supplier Utilization: % of available supplier capacity booked each week.

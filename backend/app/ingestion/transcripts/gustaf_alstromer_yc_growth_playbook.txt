@@ -1,0 +1,25 @@
+---
+guest: Gustaf Alströmer
+episode_title: The Y Combinator Growth Playbook, Retention Curves, and North Star Metrics
+episode_number: 52
+topic_tags: YC growth, retention curves, cohort retention, North Star metric, Airbnb growth, leaky bucket
+---
+
+Lenny: Gustaf, you were Head of Growth at Airbnb and have advised hundreds of top startups as a Group Partner at Y Combinator. What is the single biggest growth mistake you see early-stage founders make?
+
+Gustaf Alströmer: The number one mistake is pouring top-of-funnel acquisition into a leaky bucket. If your retention curve does not flatten parallel to the x-axis, you do not have product-market fit, and any money or effort spent on user acquisition is wasted.
+
+Lenny: How should founders analyze retention curves correctly?
+
+Gustaf Alströmer: When you plot your cohorts (Day 1 to Day 30 for B2C, or Month 1 to Month 12 for B2B):
+1. A healthy product has a retention curve that decays initially and then levels off horizontally into a stable asymptote.
+2. An unhealthy product has a retention curve that continually slopes downward toward zero.
+
+If your curve goes to zero, you must stop all growth marketing immediately and fix the core activation and value proposition.
+
+Lenny: How should startups choose their North Star Metric?
+
+Gustaf Alströmer: A great North Star metric must satisfy three criteria:
+First, it must capture the moment of actual customer value (e.g. for Airbnb, nights booked; for Spotify, time spent listening; for Uber, rides completed). Revenue is a lagging output, not a North Star.
+Second, it must be an input metric that teams can directly influence on a weekly basis.
+Third, it must align product quality with long-term retention. If your North Star goes up while retention drops, you are optimizing the wrong metric.

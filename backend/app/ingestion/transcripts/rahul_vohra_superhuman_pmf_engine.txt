@@ -1,0 +1,28 @@
+---
+guest: Rahul Vohra
+episode_title: How Superhuman Built an Engine to Find Product-Market Fit
+episode_number: 64
+topic_tags: product-market fit, PMF engine, Sean Ellis score, onboarding, speed, high willingness to pay, survey methodology
+---
+
+Lenny: Today I am thrilled to welcome Rahul Vohra, founder and CEO of Superhuman. Rahul, you pioneered the quantitative Product-Market Fit (PMF) Engine. Can you explain how you measure PMF before scaling?
+
+Rahul Vohra: Absolutely, Lenny. Most founders treat product-market fit as a binary gut feel. But you can actually reverse-engineer it using Sean Ellis's benchmark question: "How would you feel if you could no longer use the product?"
+The options are:
+1. Very disappointed
+2. Somewhat disappointed
+3. Not disappointed
+
+If 40% or more of your users say they would be "very disappointed", you have product-market fit. When we first measured Superhuman in 2017, only 22% of our users said they would be very disappointed. We were nowhere near PMF.
+
+Lenny: How did you systematically increase that number from 22% to over 58%?
+
+Rahul Vohra: We developed a 4-step PMF Engine:
+Step 1: Segment your high-expectation customers (HXC). We took the cohort of people who answered "very disappointed" and analyzed who they were. In our case, they were founders, executives, VC investors, and heavy email triage users.
+Step 2: Disregard feedback from users who answered "not disappointed" or who were never your target customer. Trying to please everyone will dilute your product positioning.
+Step 3: Analyze what the "very disappointed" cohort loves most about your product (for us, keyboard shortcuts and sub-100ms speed), and double down on making those strengths even stronger.
+Step 4: Look at the "somewhat disappointed" users whose primary objection was something you could actually fix (e.g. mobile app, calendar integration). Fix those objections to convert them into "very disappointed" advocates.
+
+Lenny: How does speed fit into product psychology?
+
+Rahul Vohra: Our design rule is the 100ms rule: if an action completes in under 100ms, human perception registers it as instantaneous and effortless. Speed is not just a technical spec; speed is a core feature that induces psychological flow.

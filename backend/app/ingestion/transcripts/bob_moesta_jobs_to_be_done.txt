@@ -1,0 +1,25 @@
+---
+guest: Bob Moesta
+episode_title: Unpacking Jobs-to-be-Done (JTBD), Demand-Side Sales, and The Four Forces of Progress
+episode_number: 91
+topic_tags: Jobs to be Done, JTBD, four forces, demand side innovation, customer interviews, habit vs anxiety
+---
+
+Lenny: Bob Moesta, co-creator of the Jobs-to-be-Done framework alongside Clayton Christensen, welcome. How should product managers think about customer motivation?
+
+Bob Moesta: People don't buy products; they "hire" them to make progress in their lives when they face a struggling moment. If there is no struggling moment, there is no demand.
+
+Lenny: What are the Four Forces of Progress that dictate whether someone will switch to a new product?
+
+Bob Moesta: Every purchasing decision is a tug-of-war between four forces:
+Forces Promoting Change:
+1. Push of the Present: The acute pain, frustration, or broken workflow with their current solution.
+2. Pull of the New Solution: The magnetic appeal, promise, and aspirational relief of the new product.
+
+Forces Opposing Change:
+3. Anxiety of the New: The fear of the unknown ("Will this actually work? Will I look foolish? Will our data migrate safely?").
+4. Habit of the Present: The comfort, muscle memory, and inertia of sticking with the current routine, even if it's flawed.
+
+Lenny: How do successful products win this battle?
+
+Bob Moesta: The combined power of (Push + Pull) must significantly outweigh (Anxiety + Habit). Product managers spend 90% of their time increasing the "Pull" with flashy features, but 10x more progress is unlocked by actively reducing "Anxiety" (e.g. 1-click migration, money-back guarantees, guided white-glove onboarding).

@@ -1,0 +1,33 @@
+---
+guest: Casey Winters
+episode_title: Growth Loops, Activation Metrics, and Marketplace Dynamics
+episode_number: 42
+topic_tags: [activation, growth loops, marketplaces, retention, acquisition, funnels]
+---
+
+Lenny: Welcome back to the podcast. Today I'm thrilled to have Casey Winters, former Chief Product Officer at Eventbrite and growth lead at Pinterest and Grubhub. Casey, one of the biggest mistakes PMs make is treating activation like simple onboarding or signups. How do you define activation for marketplaces and growth products?
+
+Casey Winters: Thanks for having me, Lenny. You hit on the central trap: PMs obsess over signups and registration completion. But signups are a vanity metric. Activation is not signing up. Activation is the exact moment a user first experiences the core value proposition of the product, creating the motivation to form a recurring habit.
+
+In a two-sided marketplace like Airbnb, Grubhub, or Eventbrite, activation has to be measured differently for supply versus demand. For demand (buyers or diners), activation is not creating an account or searching—it's their first successful completed order or booking within a critical time window, typically the first 7 to 14 days. If a diner creates an account but doesn't place an order within 14 days, their retention curve drops off a cliff.
+
+Lenny: What about the supply side?
+
+Casey Winters: For supply (restaurants, hosts, event organizers), activation is when they receive their first transaction or booking from organic demand. If a restaurant lists their menu on Grubhub but gets zero orders in week one, they churn psychologically. So supply activation is: Time to First Dollar Earned.
+
+Lenny: How should teams think about Growth Loops versus the traditional marketing funnel?
+
+Casey Winters: Funnels are linear: Acquisition -> Activation -> Retention -> Referral -> Revenue. The problem with funnels is that they require you to constantly pour money or ad spend into the top. When the spend stops, growth stops.
+
+Growth loops are closed-loop engines where the output of one cycle feeds into the input of the next. For example, in a user-generated content (UGC) loop:
+1. A user creates a piece of content or lists an event (Supply).
+2. Search engines index that page.
+3. New prospective users discover that page via Google search (Demand).
+4. A fraction of those new users become creators or event hosts themselves.
+5. They create new listings, generating more indexable pages.
+
+That is a self-sustaining loop. When you are designing growth strategy, ask yourself: "How does one cohort of active users directly generate the next cohort of users?" If the answer is "we run Facebook ads," you don't have a growth model; you have a paid acquisition tactic.
+
+Lenny: What is your advice for PMs trying to improve retention?
+
+Casey Winters: Retention is an output of activation and habituation. You can't fix retention at day 60 if the user had a broken experience on day 1. If you want to fix retention, relentlessly optimize the time-to-value (TTV) in the first 24 hours. Strip out friction, eliminate superfluous onboarding questions, and guide the user directly to the 'Aha' moment with zero distraction.

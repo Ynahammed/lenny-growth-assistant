@@ -1,0 +1,27 @@
+---
+guest: Brian Chesky
+episode_title: Founder-Led Product, The 11-Star Experience, and Reinventing Airbnb
+episode_number: 110
+topic_tags: [founder-led, 11-star experience, product design, airbnb, leadership, craft]
+---
+
+Lenny: Today I'm joined by Brian Chesky, co-founder and CEO of Airbnb. Brian, you caused a huge buzz in the tech world when you spoke about shifting Airbnb to a founder-led product model and eliminating traditional divided PM roles. What did you mean by that?
+
+Brian Chesky: Lenny, what happened across tech was that companies became divisional, matrixed, and decentralized. PMs became consensus builders and spreadsheet managers rather than product craftsmen. Decisions were delegated down, and no one was steering the holistic customer journey from end to end.
+
+Founder-led product is not micromanagement; it is deep immersion in the craft and details. At Airbnb, we got rid of the traditional siloed PM role and combined product management with product marketing. We run the entire company on a single, unified, twice-a-year release cycle. Every single feature must fit into one coherent product narrative.
+
+Lenny: You also frequently talk about the "11-Star Experience" thought experiment. How do you run that exercise with product teams?
+
+Brian Chesky: The idea is: if you want to build something extraordinary, you can't just aim for a 5-star experience. 5-star is table stakes. You have to push the concept all the way to 11 stars to find the magical, scalable breakthrough.
+
+Here's how it works:
+- 5-Star: You book an Airbnb, you show up, the host leaves the key, the apartment is clean. Nice, expected.
+- 6-Star: You show up, there is a bottle of wine, fresh flowers, and a personal welcome card.
+- 7-Star: You show up, the host knows your favorite hobbies, books surfing lessons for you, and lends you their vintage convertible.
+- 8-Star: A giant parade welcomes you at the airport with a marching band.
+- 9-Star: You land at the airport, and 5,000 screaming fans are chanting your name like the Beatles.
+- 10-Star: Elon Musk is waiting on the tarmac to take you into outer space.
+- 11-Star: You don't even have to travel; mind-bending teleportation happens and you meet God.
+
+Obviously 9, 10, and 11 stars are ridiculous. But when you explore the extreme 6, 7, and 8-star possibilities, you uncover genuine elements of magic—like curated local recommendations or bespoke check-in experiences—that cost very little but create indelible customer loyalty.
