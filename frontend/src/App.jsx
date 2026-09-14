@@ -293,9 +293,8 @@ export default function App() {
           } else if (event.type === 'artifacts') {
             streamedArtifacts = event.artifacts || [];
             setStreamingMessage((prev) => prev ? { ...prev, artifacts: streamedArtifacts } : null);
-            if (streamedArtifacts.length > 0) {
-              setActiveArtifact(streamedArtifacts[0]);
-            }
+            // Artifacts stay as inline expandable cards; the split-pane
+            // ArtifactPanel only opens when the user clicks one.
           } else if (event.type === 'token') {
             streamedText += event.token || '';
             setStreamingMessage((prev) => prev ? { ...prev, content: streamedText } : null);
