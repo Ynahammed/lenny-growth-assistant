@@ -171,6 +171,31 @@ The LLM decides which tool to call (OpenAI-style function calling across provide
 Tool flow: the model may call `retrieve` first (collecting sources), then answer — sources are
 rendered as clickable citation pills that open the full transcript excerpt.
 
+## Agent backends (Claude Agent SDK + native loop)
+
+The agent layer ships with **two interchangeable backends**, selected with `AGENT_BACKEND`:
+
+| Backend | Value | Notes |
+|---|---|---|
+| **Claude Agent SDK** (default) | `claude-agent-sdk` | The six tools are re-exported as **in-process MCP tools** (`create_sdk_mcp_server`) and the official Anthropic SDK drives the tool loop via its bundled Claude Code CLI |
+| **Native loop** | `native` | `AgentManager`'s own provider-agnostic function-calling loop (works with every provider, incl. Groq/Gemini/mock) |
+
+- **Provider routing:** the SDK path supports providers with an Anthropic-Messages-compatible
+  endpoint — `ollama` (verified live: `ANTHROPIC_BASE_URL` = Ollama origin, model discovery via
+  `/v1/models`) and `anthropic`. Groq/Gemini have no such endpoint and automatically use the
+  native loop.
+- **Graceful fallback:** any SDK failure (missing CLI, subprocess error, unsupported provider)
+  falls back to the native loop *before the first streamed event*, so the product never breaks.
+- **Shared executor:** both backends call the same `_execute_tool`, so filters, contextualized
+  queries, sources, and artifacts behave identically either way.
+- **Compatibility notes** (found the hard way, encoded in `sdk_adapter.py`): the CLI appends
+  `/v1/messages` itself (base URL must be the bare origin), custom model ids need
+  `CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1`, and CLI-injected `system`-role reminder
+  messages are disabled (`CLAUDE_CODE_TOTAL_TOKENS_REMINDER=0`,
+  `CLAUDE_CODE_CARVED_SLATE=0`) because they break tool binding on small local models.
+- Small local models (≤3B) often skip tool calls entirely; `qwen2.5:7b-instruct` or larger is
+  recommended for the SDK + Ollama path.
+
 ## Architecture
 
 ```

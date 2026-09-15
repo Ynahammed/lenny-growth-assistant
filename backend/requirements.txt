@@ -7,6 +7,10 @@ uvicorn==0.34.0
 starlette==1.6.0
 python-multipart==0.0.20
 
+# Agent layer (official Anthropic Claude Agent SDK; runs the same tools as
+# in-process MCP servers; falls back to the native loop if unavailable)
+claude-agent-sdk==0.2.152
+
 # Data & validation
 pydantic==2.13.3
 pydantic-settings==2.7.1

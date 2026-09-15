@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     
     # LLM Provider Configuration ('ollama' | 'groq' | 'gemini' | 'mock')
     LLM_PROVIDER: str = "ollama"
+
+    # Agent backend: 'native' (built-in tool loop) or 'claude-agent-sdk'
+    # (official Anthropic Claude Agent SDK; ollama/anthropic providers only,
+    # auto-falls back to native on any SDK failure).
+    AGENT_BACKEND: str = "claude-agent-sdk"
     
     # Ollama Settings (Local)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
@@ -26,6 +31,10 @@ class Settings(BaseSettings):
     # Google Gemini Settings
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.6-flash"
+
+    # Anthropic (used by the Claude Agent SDK backend; optional)
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-5"
     
     # Database Settings (PostgreSQL — Supabase/Railway/local via Docker all work).
     # Bare postgres:// or postgresql:// URLs (Supabase/Railway style) are
