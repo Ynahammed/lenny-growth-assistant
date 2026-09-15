@@ -40,3 +40,6 @@ agent-transcripts/
 Thumbs.db
 .idea/
 .vscode/
+
+# local demo deliverable (never commit/push)
+Lenny_Growth_Assistant_Demo.pdf
