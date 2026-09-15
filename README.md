@@ -53,7 +53,10 @@ Brings up PostgreSQL + backend + frontend together:
 
 ```bash
 docker compose up --build
-docker compose ps          # all services healthy
+docker compose ps          
+> **First build takes ~5–10 minutes** (CPU-only torch wheel + embedding-model predownload). Later builds are fully cached. The backend container also auto-ingests the transcript corpus on first start (~75s incl. model load) before serving.
+
+# all services healthy
 # open http://localhost:5173 — /api proxies to the backend container
 ```
 
