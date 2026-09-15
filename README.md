@@ -93,6 +93,15 @@ npm run dev                 # http://localhost:5173 (proxies /api -> 127.0.0.1:8
 
 ### Run the tests
 
+Backend unit/integration suite (isolated temp DB + vector store, mock provider — no keys needed):
+
+```bash
+cd backend && python -m pytest -q
+```
+
+For the **UI manual test plan** (click-through checklist for evaluators), see
+[docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md).
+
 ```bash
 cd backend
 python -m pytest            # 72 tests; uses isolated temp DB/vector store
@@ -252,6 +261,21 @@ Then re-index:
 cd backend
 python -m app.ingestion.ingest --reset
 ```
+
+## Troubleshooting
+
+| Symptom | Cause & fix |
+|---|---|
+| `init_db` fails at startup: "connection refused" / "run docker compose up -d db" | PostgreSQL isn't reachable. Compose: `docker compose up -d db` and wait for `healthy`. Native dev: start Postgres (Compose db is fine) or set `DATABASE_URL=sqlite:///lenny_growth.db` for a fallback DB. |
+| Cloud provider errors with 401/empty-key message | Keys come from `backend/.env`. Inside Compose, remember that `environment:` in `docker-compose.yml` overrides `env_file` — only `DATABASE_URL`/`OLLAMA_BASE_URL` belong there. |
+| A model 404s ("model retired") | `InstrumentedProvider` auto-discovers an available model and retries; check `/api/health → llm_telemetry` for fallback counts, or pin a current model name in `backend/.env`. |
+| Ollama answers but never calls tools (no tool pill, generic answer) | Small local models (≤3B) often skip tool binding on long tool lists — use `qwen2.5:7b-instruct` or larger (`ollama pull qwen2.5:7b-instruct`, set `OLLAMA_MODEL`). The native loop is the fallback path. |
+| Agent SDK path errors (CLI/subprocess) | Set `AGENT_BACKEND=native` to bypass; check that no corporate proxy blocks the bundled CLI. Reset cached CLI state with `claude` logout/login if it ever prompts for auth. |
+| First answer is slow (~15s), then fast | The embedding/rerank models load on first use (they're predownloaded at image build). Subsequent requests are warm. |
+| Refusals on questions you *know* are covered | The relevance cutoff is doing its job — check the phrasing matches corpus vocabulary, or verify ingestion: the Chroma count is on `/api/health` (`vector_store.total_chunks` should be 48 for the shipped corpus). Re-index by deleting `chroma_db/` and restarting (auto-ingest rebuilds it). |
+| Port already in use (5173 / 8001) | Compose and native servers can't run simultaneously. `docker compose stop backend frontend` before running native dev servers (keep `db`), or stop the native processes first. |
+| Compose build is slow the first time | ~5–10 min: CPU-only torch wheel + model predownload. Later builds are fully cached. |
+| Where are the logs? | Native: stdout of `uvicorn` (structured JSON). Compose: `docker compose logs -f backend`. Agent/tool events, rewrites, and dropped-chunk counts are all log lines. |
 
 ## Security notes
 
