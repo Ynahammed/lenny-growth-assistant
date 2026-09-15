@@ -1,0 +1,244 @@
+{
+  "model": "llama3.2",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "<system-reminder>\nAs you answer the user's questions, you can use the following context:\n# currentDate\nToday's date is 2026-09-15.\n\n      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.\n</system-reminder>\n\n"
+        },
+        {
+          "type": "text",
+          "text": "User: Use the retrieve tool to search transcripts for 'Superhuman PMF survey' and summarize what you find."
+        }
+      ]
+    },
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "<total_tokens>15000000 tokens left</total_tokens>",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    }
+  ],
+  "system": [
+    {
+      "type": "text",
+      "text": "x-anthropic-billing-header: cc_version=2.1.259.71b; cc_entrypoint=sdk-py;"
+    },
+    {
+      "type": "text",
+      "text": "You are a Claude agent, built on Anthropic's Claude Agent SDK.",
+      "cache_control": {
+        "type": "ephemeral"
+      }
+    },
+    {
+      "type": "text",
+      "text": "\nYou are the Lenny Growth Assistant, an AI expert trained exclusively on transcripts from Lenny's Podcast and Newsletter.\nYou provide precise, battle-tested advice for Product Managers, Growth Leads, and Founders.\n\nCORE OPERATING PRINCIPLES:\n1. STRICT TRANSCRIPT GROUNDING:\n   - Answer questions using evidence from Lenny's podcast transcript corpus.\n   - Cite your sources clearly with the guest name and episode (e.g. \"According to Casey Winters in Ep #42...\").\n\n2. EXPLICIT REFUSAL ON UNGROUNDED QUERIES:\n   - The retrieve tool already filters out low-relevance matches and reports\n     `no_relevant_evidence: true` when nothing clears the threshold. When that\n     flag is set (or no transcripts are found), you MUST explicitly refuse:\n     \"I couldn't find any discussion about this topic in Lenny's podcast transcript corpus. I only provide insights grounded in Lenny's podcast episodes.\"\n   - NEVER answer off-topic questions from general knowledge, and NEVER invent\n     citations or guests. No evidence means refusal \u2014 not a best guess.\n\n3. SPECIALIZED PRODUCT TOOLS:\n   - Use `prd_generator` when asked for a PRD, product spec, or feature requirements.\n   - Use `pre_mortem_simulator` when asked for a Pre-Mortem or launch failure risk analysis.\n   - Use `growth_audit` when analyzing funnel metrics, churn, or retention drop-offs.\n   - Use `ship30_essay` when asked for an atomic essay or publishable summary.\n\n4. OPTIONAL RETRIEVAL FILTERS:\n   - `retrieve` accepts optional `guest` and `episode_number` arguments. When the\n     user names a guest ('what does Shreyas say...') or a specific episode\n     ('in episode 64...'), pass the filter. If a `filter_error` names available\n     guests, retry once with a corrected guest name from that list.\n",
+      "cache_control": {
+        "type": "ephemeral"
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "mcp__lenny__artifact_gen",
+      "description": "Generates a structured, shareable document artifact (Markdown strategy doc, framework cheat-sheet, or styled HTML executive memo) from transcript insights.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Descriptive title for the artifact."
+          },
+          "artifact_type": {
+            "type": "string",
+            "enum": [
+              "essay",
+              "markdown",
+              "html"
+            ],
+            "description": "Type of artifact to produce: 'essay' (Ship30), 'markdown' (standard doc), or 'html' (styled document)."
+          },
+          "content": {
+            "type": "string",
+            "description": "The complete markdown or HTML content of the artifact."
+          }
+        },
+        "required": [
+          "title",
+          "artifact_type",
+          "content"
+        ]
+      }
+    },
+    {
+      "name": "mcp__lenny__growth_audit",
+      "description": "Performs a quantitative and structural growth audit on a startup's funnel, activation rate, or retention curve.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "business_model": {
+            "type": "string",
+            "description": "The business model type (e.g., 'B2B SaaS / PLG', 'B2C Marketplace', 'Consumer App', 'E-commerce')."
+          },
+          "funnel_metrics": {
+            "type": "string",
+            "description": "User funnel numbers or conversion rates (e.g. 10k visitors -> 500 signups -> 50 activated -> 10 paid)."
+          },
+          "primary_concern": {
+            "type": "string",
+            "description": "The primary symptom (e.g., 'High signup drop-off', 'Leaky bucket retention', 'Low PQL conversion')."
+          }
+        },
+        "required": [
+          "business_model",
+          "funnel_metrics"
+        ]
+      }
+    },
+    {
+      "name": "mcp__lenny__prd_generator",
+      "description": "Generates a structured, production-grade Product Requirements Document (PRD) for a new feature, product, or growth experiment.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the product feature or initiative."
+          },
+          "problem_statement": {
+            "type": "string",
+            "description": "The core user problem, struggling moment (JTBD), and business context."
+          },
+          "target_persona": {
+            "type": "string",
+            "description": "The High-Expectation Customer (HXC) or Ideal Customer Profile (ICP)."
+          },
+          "goals_and_metrics": {
+            "type": "string",
+            "description": "The North Star metric, primary input metrics, and guardrail metrics."
+          },
+          "user_stories": {
+            "type": "string",
+            "description": "Key user stories / functional requirements in 'As a user, I want X so that Y' format."
+          },
+          "non_goals": {
+            "type": "string",
+            "description": "Explicit out-of-scope items to prevent scope creep."
+          }
+        },
+        "required": [
+          "title",
+          "problem_statement"
+        ]
+      }
+    },
+    {
+      "name": "mcp__lenny__pre_mortem_simulator",
+      "description": "Runs a Shreyas Doshi-style Pre-Mortem on a proposed product launch, feature, or company strategy to uncover hidden failure modes before shipping.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "initiative_name": {
+            "type": "string",
+            "description": "The name of the feature, product launch, or growth initiative."
+          },
+          "launch_context": {
+            "type": "string",
+            "description": "Brief description of the planned launch and goals."
+          },
+          "top_failure_modes": {
+            "type": "string",
+            "description": "Anticipated scenarios where the project fails spectacularly 6 months post-launch."
+          }
+        },
+        "required": [
+          "initiative_name",
+          "launch_context"
+        ]
+      }
+    },
+    {
+      "name": "mcp__lenny__retrieve",
+      "description": "Searches the vector database for relevant transcripts from Lenny's Podcast on product management, growth loops, marketplace metrics, and strategy. Supports optional filters to restrict the search to a specific guest or episode.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The specific question or semantic search term to look up in the transcript library."
+          },
+          "top_k": {
+            "type": "integer",
+            "description": "Number of top relevant transcript chunks to return (default 4).",
+            "default": 4
+          },
+          "guest": {
+            "type": "string",
+            "description": "Optional: restrict the search to episodes with this guest (e.g. 'Shreyas Doshi', 'Casey Winters'). Use when the user names a guest or asks 'only X episodes'."
+          },
+          "episode_number": {
+            "type": "integer",
+            "description": "Optional: restrict the search to one episode number (e.g. 42). Use when the user references a specific episode."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "mcp__lenny__ship30_essay",
+      "description": "Transforms grounded transcript insights into a high-impact, 250-300 word Ship 30/30 Atomic Essay with a hook, structured subheads, and punchy takeaway.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "description": "The specific growth or product concept to cover."
+          },
+          "core_insights": {
+            "type": "string",
+            "description": "The grounded insights and quotes retrieved from Lenny's transcripts."
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "Target reader.",
+            "default": "Product Managers and Growth Leads"
+          }
+        },
+        "required": [
+          "topic",
+          "core_insights"
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "user_id": "{\"device_id\":\"16354b656f44033668b6fe779d594a50c95b7e599c0988553d2fb416e3ae5993\",\"account_uuid\":\"\",\"session_id\":\"1f6f4781-dbdd-44c1-adb3-66ef1ebe9f2e\"}"
+  },
+  "max_tokens": 32000,
+  "thinking": {
+    "type": "adaptive"
+  },
+  "context_management": {
+    "edits": [
+      {
+        "type": "clear_thinking_20251015",
+        "keep": "all"
+      }
+    ]
+  },
+  "output_config": {
+    "effort": "high"
+  },
+  "stream": true
+}

@@ -1133,6 +1133,15 @@ body {
   transform: rotate(180deg);
 }
 
+/* Sandboxed iframe for untrusted HTML artifacts (see design.md security notes) */
+.artifact-html-frame {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #fffdf5;
+}
+
 .artifact-card-body {
   max-height: 0;
   overflow: hidden;

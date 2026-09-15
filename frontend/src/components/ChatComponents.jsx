@@ -526,7 +526,11 @@ export function ChatMessage({
                 </div>
                 <div className={`artifact-card-body ${expandedArtifacts[art.id || idx] ? 'expanded' : ''}`}>
                   <div className="artifact-content">
-                    <ReactMarkdown>{art.content}</ReactMarkdown>
+                    {isHtmlArtifact(art) ? (
+                      <SandboxHtmlArtifact html={art.content} />
+                    ) : (
+                      <ReactMarkdown>{art.content}</ReactMarkdown>
+                    )}
                   </div>
                 </div>
               </div>
@@ -690,8 +694,36 @@ export function FilterChips({ corpus, guest, episode, onChange, disabled }) {
       )}
     </div>
   );
+}/**
+ * Sandbox for untrusted HTML artifacts.
+ *
+ * Why both an attribute allowlist AND a sandbox: the sandbox isolates the
+ * document (no app DOM/origin/storage access, no scripts, no popups, no form
+ * submissions); the attribute allowlist is the second layer, covering any
+ * content that reaches the real DOM (e.g. copy/export paths). Only
+ * https:/mailto: links survive; inline styles remain so generated documents
+ * keep their design.
+ */
+const HTML_ARTIFACT_SANDBOX = 'allow-same-origin';
+
+export function SandboxHtmlArtifact({ html }) {
+  return (
+    <iframe
+      className="artifact-html-frame"
+      title="Artifact preview"
+      sandbox={HTML_ARTIFACT_SANDBOX}
+      srcDoc={html}
+      referrerPolicy="no-referrer"
+    />
+  );
 }
 
+export function isHtmlArtifact(artifact) {
+  if (!artifact) return false;
+  const t = artifact.artifact_type || '';
+  if (t === 'html') return true;
+  return t === 'markdown' && /<\s*(html|body|!DOCTYPE)[\s>]/i.test(artifact.content || '');
+}
 
 /**
  * Artifact viewer panel (split view on the right).
@@ -702,8 +734,7 @@ export function ArtifactPanel({ artifact, onClose, onToast }) {
   return (
     <div className="artifact-panel open">
       <div className="artifact-panel-header">
-        <span className={`artifact-type-badge ${artifact.artifact_type || 'markdown'}`}>
-          {artifact.artifact_type || 'artifact'}
+        <span className={`artifact-type-badge ${artifact.artifact_type || 'markdown'}`}>{artifact.artifact_type || 'artifact'}
         </span>
         <span className="artifact-panel-title">{artifact.title}</span>
         <button className="artifact-panel-close" onClick={onClose} id="close-artifact-panel">
@@ -711,9 +742,13 @@ export function ArtifactPanel({ artifact, onClose, onToast }) {
         </button>
       </div>
       <div className="artifact-panel-body">
-        <div className="rendered-markdown">
-          <ReactMarkdown>{artifact.content}</ReactMarkdown>
-        </div>
+        {isHtmlArtifact(artifact) ? (
+          <SandboxHtmlArtifact html={artifact.content} />
+        ) : (
+          <div className="rendered-markdown">
+            <ReactMarkdown>{artifact.content}</ReactMarkdown>
+          </div>
+        )}
       </div>
       <div className="artifact-panel-footer">
         <ActionBar content={artifact.content} title={artifact.title} onToast={onToast} />

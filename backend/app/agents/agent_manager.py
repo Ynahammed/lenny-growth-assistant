@@ -194,13 +194,19 @@ class AgentManager:
             topic = args.get("topic", user_message)
             insights = args.get("core_insights", "")
             target_aud = args.get("target_audience", "Product Managers")
-            res = execute_ship30_essay(topic=topic, core_insights=insights, target_audience=target_aud)
-            generated_artifacts.append({
-                "title": f"Ship30 Essay: {topic}",
-                "artifact_type": "essay",
-                "content": res.get("essay_content", "")
-            })
-            return f"Ship30 atomic essay generated."
+            essay_title = args.get("title")
+            # The essay is WRITTEN here by the active provider (Ship 30 for 30
+            # framework, ~1,250 words) and returned as a ready artifact.
+            art = await execute_ship30_essay(
+                topic=topic, core_insights=insights, target_audience=target_aud,
+                title=essay_title, provider=self.provider,
+            )
+            generated_artifacts.append(art)
+            return (
+                f"Ship30 atomic essay '{art['title']}' generated "
+                f"({art['word_count']} words, backend={art['backend']}). "
+                "Summarize for the user and point them to the essay artifact."
+            )
 
         elif name == "artifact_gen":
             title = args.get("title", "Generated Growth Artifact")
@@ -296,7 +302,27 @@ class AgentManager:
         user_message: str,
         retrieve_filters: Optional[Dict[str, Any]] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        """Streaming execution yielding real-time events, tool status, tokens, sources, and artifacts."""
+        """Streaming execution yielding real-time events, tool status, tokens, sources, and artifacts.
+
+        When the selected provider is SDK-capable (ollama/anthropic) and the
+        claude-agent-sdk package is installed, the turn runs through the
+        official Claude Agent SDK (see sdk_adapter) with the same six tools
+        exposed as in-process MCP tools. Any SDK failure falls back to the
+        native loop below — before any event is emitted — so the product
+        never breaks because of the SDK path.
+        """
+        if settings.AGENT_BACKEND == "claude-agent-sdk":
+            from app.agents.sdk_adapter import AdapterError, execute_turn_stream_sdk
+            try:
+                async for event in execute_turn_stream_sdk(
+                    conversation_history, user_message, retrieve_filters,
+                    provider_type=self.provider_type,
+                ):
+                    yield event
+                return
+            except AdapterError as e:
+                logger.warning("Agent SDK path unavailable (%s); using native loop.", e)
+
         messages = list(conversation_history)
         messages.append({"role": "user", "content": user_message})
 

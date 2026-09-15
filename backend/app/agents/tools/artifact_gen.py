@@ -1,5 +1,12 @@
 """
 Artifact Generation Tool.
+
+HTML artifacts are treated as UNTRUSTED output (they are model-generated and
+could embed prompt-injected payloads). They are sanitized with an allowlist
+sanitizer (nh3, Rust ammonia bindings) before persistence: scripts, event
+handlers, javascript: URLs, iframes and other active content are stripped.
+The frontend additionally renders inside a sandboxed iframe — defense in depth
+(see README "Security notes" and design.md for the permit/block rationale).
 """
 import re
 import logging
@@ -33,8 +40,65 @@ ARTIFACT_TOOL_SCHEMA = {
 
 
 def sanitize_html_content(raw_html: str) -> str:
+    """Sanitize model-generated HTML with an allowlist sanitizer.
+
+    Primary: nh3 (Rust ammonia bindings) — a real HTML parser + allowlist,
+    immune to the evasion tricks regex filters miss (mXSS, attribute splitting,
+    entity tricks). Fallback: the legacy regex pass below, kept so the tool
+    still degrades gracefully if nh3 is not installed.
+    """
+    try:
+        import nh3
+    except ImportError:
+        logger.warning("nh3 not installed; falling back to regex HTML sanitization.")
+        return _regex_sanitize_html(raw_html)
+
+    cleaned = nh3.clean(
+        raw_html,
+        tags={
+            "a", "b", "blockquote", "br", "code", "div", "em", "h1", "h2",
+            "h3", "h4", "h5", "h6", "hr", "i", "img", "li", "ol", "p",
+            "pre", "s", "span", "strong", "sub", "sup", "table", "tbody",
+            "td", "th", "thead", "tr", "u", "ul", "style", "title", "head",
+            "html", "body", "meta",
+        },
+        attributes={
+            "a": {"href", "title"},
+            "img": {"src", "alt", "width", "height"},
+            "div": {"class", "style"},
+            "span": {"class", "style"},
+            "p": {"class", "style"},
+            "table": {"class"},
+            "td": {"class", "style"},
+            "th": {"class", "style"},
+            "li": {"class", "style"},
+            "meta": {"charset", "name", "content"},
+            "*": {"style"},
+        },
+        url_schemes={"http", "https", "mailto"},
+        # Override the default {script, style} clean_content_tags: we ALLOWLIST
+        # <style> as a tag (styled documents are a core feature), so it must not
+        # also appear in clean_content_tags. Script never survives anyway.
+        clean_content_tags={"script"},
+        # <style> content is NOT CSS-parsed by nh3; drop anything that smells
+        # like an escape hatch from the style element (import/url/expression).
+        link_rel="noopener noreferrer",
+    )
+    cleaned = re.sub(
+        r"@import\s*[^;]+;?|url\s*\([^)]*\)|expression\s*\([^)]*\)|behavior\s*:\s*url\s*\([^)]*\)",
+        "/* blocked */",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return cleaned
+
+
+def _regex_sanitize_html(raw_html: str) -> str:
+    """Legacy best-effort sanitizer (fallback only — not security-critical)."""
     cleaned = raw_html
     cleaned = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'<iframe\b[^>]*>.*?<\/iframe>', '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = re.sub(r'<object\b[^>]*>.*?<\/object>|<embed\b[^>]*>', '', cleaned, flags=re.IGNORECASE | re.DOTALL)
     cleaned = re.sub(r'href=[\'"]javascript:[^\'"]*[\'"]', 'href="#"', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\son\w+=["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
     return cleaned

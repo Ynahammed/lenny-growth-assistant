@@ -9,6 +9,13 @@ Built with **FastAPI + ChromaDB + SQLAlchemy** on the backend and **React 18 + V
 frontend. Four pluggable LLM providers (local Ollama, Groq, Google Gemini, and an offline Mock)
 with automatic model-retirement fallback and per-provider telemetry.
 
+## Documentation
+
+- [PRD.md](PRD.md) — discovery brief, success metrics, assumptions, scope, flows, acceptance criteria
+- [design.md](design.md) — UI/UX principles, interaction states, responsive behavior, accessibility, artifact-viewer security rationale
+- [architecture.md](architecture.md) — schema, API surface, retrieval flow, agent backends, security model, deployment topology
+- [agent_transcripts/](agent_transcripts/TRANSCRIPTS.md) — curated coding-agent session log: failures, dead ends, and how each was fixed (with captured HTTP evidence)
+
 ## Features
 
 - **Grounded RAG chat** — every answer is retrieved from the transcript corpus and cited by
@@ -165,7 +172,7 @@ The LLM decides which tool to call (OpenAI-style function calling across provide
 | `prd_generator` | Production-grade PRD: problem statement, HXC persona, goals/metrics, user stories, non-goals, rollout plan |
 | `pre_mortem_simulator` | Shreyas Doshi-style pre-mortem: failure modes, mitigations, go/no-go checklist |
 | `growth_audit` | Funnel/activation/retention diagnosis with benchmarks and experiment suggestions |
-| `ship30_essay` | 250–300-word atomic essay from grounded insights |
+| `ship30_essay` | ~1,250-word Ship 30 for 30 atomic essay (hook → subheaded progression → bolded takeaway), with word-budget post-conditions and a deterministic evidence-only fallback |
 | `artifact_gen` | Styled shareable artifact (markdown or sanitized HTML document) |
 
 Tool flow: the model may call `retrieve` first (collecting sources), then answer — sources are
@@ -245,6 +252,10 @@ python -m app.ingestion.ingest --reset
 
 ## Security notes
 
+- **Generated HTML artifacts are untrusted.** They pass an allowlist sanitizer (`nh3` — scripts,
+  event handlers, `javascript:` URLs, iframes, and CSS `@import`/`url()` are stripped) *before*
+  persistence, and render in a sandboxed iframe (no scripts, no forms, no popups, no app-origin
+  access). The full permit/block rationale is in [design.md](design.md) §Security.
 - CORS is wide open (`allow_origins=["*"]`) and there is **no authentication** — fine for local
   use; lock both down before exposing beyond localhost
 - API keys live only in `backend/.env`, which is git-ignored

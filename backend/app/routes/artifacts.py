@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.db import get_db
 from app.database.models import ArtifactModel, MessageModel, SessionModel
-from app.agents.tools.ship30_essay import execute_ship30_essay, SHIP30_SYSTEM_INSTRUCTIONS
+from app.agents.tools.ship30_essay import execute_ship30_essay
 from app.agents.tools.artifact_gen import execute_artifact_gen
 from app.llm.provider import get_provider
 from app.config import settings
@@ -60,32 +60,22 @@ async def generate_artifact(payload: GenerateArtifactRequest, db: Session = Depe
         content_to_use = f"Insights on {payload.topic} from Lenny's Podcast."
 
     provider = get_provider(session_obj.provider_used or settings.LLM_PROVIDER)
-    
-    if payload.artifact_type == "essay":
-        system_instruction = SHIP30_SYSTEM_INSTRUCTIONS
-        prompt = (
-            f"Generate a Ship30 Atomic Essay on: {payload.topic}\n\n"
-            f"Target Audience: {payload.target_audience}\n\n"
-            f"Source Evidence:\n{content_to_use}\n"
-        )
-        res = await provider.generate(
-            messages=[{"role": "user", "content": prompt}],
-            system_prompt=system_instruction
-        )
-        essay_content = res.content.strip()
-        
-        title = f"Ship30: {payload.topic}"
-        for line in essay_content.split("\n"):
-            if line.startswith("# "):
-                title = line.replace("# ", "").strip()
-                break
 
+    if payload.artifact_type == "essay":
+        # Same skill the agent tool uses: ~1,250-word Ship 30 essay with
+        # post-conditions (word budget, structure) + deterministic fallback.
+        res = await execute_ship30_essay(
+            topic=payload.topic,
+            core_insights=content_to_use,
+            target_audience=payload.target_audience or "Product Managers and Growth Leads",
+            provider=provider,
+        )
         art_record = ArtifactModel(
             session_id=payload.session_id,
             message_id=payload.message_id,
             artifact_type="essay",
-            title=title,
-            content=essay_content
+            title=res["title"],
+            content=res["content"]
         )
     elif payload.artifact_type == "html":
         art_data = execute_artifact_gen(

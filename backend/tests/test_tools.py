@@ -203,8 +203,62 @@ class TestArtifactGen:
 
 
 class TestShip30Essay:
-    def test_returns_brief_not_essay(self):
-        res = execute_ship30_essay(topic="Loops", core_insights="insight")
-        assert res["format_target"] == "ship30_atomic_essay"
-        assert res["word_budget"] == "250-300 words"
-        assert res["context"] == "insight"
+    @pytest.mark.asyncio
+    async def test_llm_path_writes_essay(self):
+        """With a provider, the skill WRITES the essay and reports post-conditions."""
+
+        class FakeProvider:
+            async def generate(self, messages, system_prompt, tools=None, **kw):
+                class R:
+                    content = (
+                        "# The Test Essay\n\nHook line that challenges the status quo.\n\n"
+                        "### Section\n\n" + ("Grounded insight prose. " * 400)
+                    )
+                return R()
+
+        res = await execute_ship30_essay(
+            topic="Loops", core_insights="Insight one; insight two", provider=FakeProvider()
+        )
+        assert res["artifact_type"] == "essay"
+        assert res["backend"] == "llm"
+        assert res["word_count"] >= 900
+        assert res["title"] == "The Test Essay"
+        assert res["content"].startswith("# ")
+
+    @pytest.mark.asyncio
+    async def test_fallback_when_provider_fails(self):
+        """Provider failure yields the deterministic, grounded fallback essay."""
+
+        class BoomProvider:
+            async def generate(self, *a, **kw):
+                raise RuntimeError("provider down")
+
+        res = await execute_ship30_essay(
+            topic="Loops", core_insights="Insight one; insight two", provider=BoomProvider()
+        )
+        assert res["backend"] == "fallback"
+        assert res["content"]  # never empty
+        assert "Insight one" in res["content"]  # grounded, not fabricated
+
+    @pytest.mark.asyncio
+    async def test_expansion_round_when_too_short(self):
+        """A short draft triggers exactly one expansion request."""
+
+        class ShortProvider:
+            def __init__(self):
+                self.calls = 0
+
+            async def generate(self, messages, system_prompt, tools=None, **kw):
+                self.calls += 1
+                class R:
+                    pass
+                if self.calls == 1:
+                    R.content = "# Short\n\n" + "word " * 100
+                else:
+                    R.content = "# Expanded\n\n" + "word " * 1200
+                return R()
+
+        p = ShortProvider()
+        res = await execute_ship30_essay(topic="X", core_insights="i", provider=p)
+        assert p.calls == 2
+        assert res["word_count"] >= 900
