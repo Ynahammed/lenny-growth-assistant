@@ -262,6 +262,21 @@ cd backend
 python -m app.ingestion.ingest --reset
 ```
 
+## Deployment (cloud)
+
+The Compose stack is the intended local deployment. For a public URL:
+
+- **Backend → Railway or Render** (container hosting; the verified `backend/Dockerfile` deploys
+  as-is — `PORT` is respected automatically). `render.yaml` blueprint included. Attach any
+  managed Postgres (Render/Railway/Supabase — bare `postgres://` URLs are normalized) and set
+  `LLM_PROVIDER=groq` + keys. Keep one instance (Chroma uses the attached disk/volume).
+  *Note: serverless platforms (classic Vercel functions) cannot host this backend — torch +
+  ChromaDB exceed function size/runtime limits by design.*
+- **Frontend → Vercel**: set the project **Root Directory to `frontend/`** (so Vercel builds the
+  Vite app, not Python). `frontend/vercel.json` rewrites `/api/*` to your backend URL — put the
+  backend host in `REPLACE-WITH-YOUR-BACKEND-HOST`. Optionally set `VITE_API_BASE` to call the
+  backend directly instead of a rewrite.
+
 ## Troubleshooting
 
 | Symptom | Cause & fix |

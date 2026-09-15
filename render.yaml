@@ -1,0 +1,31 @@
+# Render blueprint for the Lenny Growth Assistant backend.
+# Deploy: Render dashboard -> New + -> Blueprint -> pick this repo.
+# (Railway: same image works — New Service -> Deploy from repo, root=backend,
+#  then set the env vars below in the dashboard and add a volume at /app/chroma_db.)
+#
+# Cloud Postgres options (any one works — the app normalizes postgres:// URLs):
+#   Render PostgreSQL, Railway PostgreSQL, Supabase connection string, etc.
+
+services:
+  - type: web
+    name: lenny-growth-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # set in dashboard: your Postgres connection string
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq   # cloud default; switch to groq/gemini — ollama won't exist there
+      - key: OLLAMA_BASE_URL
+        value: http://host.docker.internal:11434
+    disk:
+      name: chroma
+      mountPath: /app/chroma_db
+      sizeGB: 1

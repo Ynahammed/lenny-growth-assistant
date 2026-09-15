@@ -3,7 +3,9 @@
  * Handles all HTTP & SSE streaming communication with the FastAPI backend.
  */
 
-const API_BASE = '/api';
+// Same-origin by default (Vite dev proxy locally; Vercel rewrite in prod).
+// Override with VITE_API_BASE if you point the UI straight at the backend host.
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 class ApiError extends Error {
   constructor(message, status, data) {

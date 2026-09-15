@@ -35,4 +35,6 @@ RUN mkdir -p /app/.cache/huggingface /app/chroma_db
 VOLUME ["/app/.cache/huggingface", "/app/chroma_db"]
 
 EXPOSE 8001
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Deploy platforms (Railway/Render) route traffic via $PORT; Compose keeps 8001.
+ENV PORT=8001
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8001}"]
