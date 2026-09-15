@@ -37,7 +37,22 @@ with automatic model-retirement fallback and per-provider telemetry.
 
 - Python 3.12
 - Node.js 18+
+- Docker (for the bundled PostgreSQL; or point `DATABASE_URL` at Supabase/Railway)
 - (optional) [Ollama](https://ollama.com) with a model pulled, e.g. `ollama pull llama3.2`
+
+### One-command startup (Docker Compose)
+
+Brings up PostgreSQL + backend + frontend together:
+
+```bash
+docker compose up --build
+docker compose ps          # all services healthy
+# open http://localhost:5173 — /api proxies to the backend container
+```
+
+LLM keys are read from `backend/.env` (Compose loads it automatically). Existing conversations in
+the old SQLite file can be carried over with `python scripts/migrate_sqlite_to_postgres.py`
+(from `backend/`).
 
 ### Backend
 
@@ -48,8 +63,11 @@ cp .env.example .env        # then edit .env with your API keys (see below)
 python -m uvicorn app.main:app --port 8001
 ```
 
-On startup the app initializes SQLite, and indexes the bundled transcripts into ChromaDB if the
-vector store is empty. Health check:
+On startup the app connects to **PostgreSQL** (the default `DATABASE_URL` points at
+`localhost:5432` with lenny/lenny credentials — start it with `docker compose up -d db`, or point
+`DATABASE_URL` at Supabase/Railway, or set `DATABASE_URL=sqlite:///lenny_growth.db` for a SQLite
+fallback) and indexes the bundled transcripts into ChromaDB if the vector store is empty. Health
+check:
 
 ```bash
 curl http://127.0.0.1:8001/api/health
@@ -170,8 +188,9 @@ backend FastAPI (port 8001)
   ├── database/             SQLAlchemy models: sessions, messages, artifacts
   └── middleware/           structured JSON logging, global error handlers
         │
-        ├── SQLite (lenny_growth.db)     sessions / messages / artifacts
-        └── ChromaDB (chroma_db/)        51 transcript chunks, cited metadata
+        ├── PostgreSQL (default; Docker/Supabase/Railway)   sessions / messages / artifacts
+        │   └── SQLite fallback via DATABASE_URL=sqlite:///...
+        └── ChromaDB (chroma_db/)        48 transcript chunks, cited metadata
 ```
 
 **Streaming protocol (SSE events):** `status` → `tool_start` / `tool_end` → `sources` →

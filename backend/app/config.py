@@ -27,8 +27,10 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.6-flash"
     
-    # Database Settings (Local SQLite)
-    DATABASE_URL: str = f"sqlite:///{BASE_DIR}/lenny_growth.db"
+    # Database Settings (PostgreSQL — Supabase/Railway/local via Docker all work).
+    # Bare postgres:// or postgresql:// URLs (Supabase/Railway style) are
+    # normalized to the psycopg driver in app/database/db.py.
+    DATABASE_URL: str = "postgresql+psycopg://lenny:lenny@localhost:5432/lenny_growth"
     
     # ChromaDB Vector Store
     CHROMA_PERSIST_DIRECTORY: str = str(BASE_DIR / "chroma_db")

@@ -31,7 +31,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError):
             "error_type": "DatabaseError",
             "message": "Database connection or transaction error. Local data remains safe.",
             "details": str(exc),
-            "suggestion": "Check your DATABASE_URL configuration or verify the local SQLite database."
+            "suggestion": "Check your DATABASE_URL configuration, verify PostgreSQL is reachable ('docker compose up -d db'), or set DATABASE_URL to a sqlite:/// URL for a local fallback."
         }
     )
 
