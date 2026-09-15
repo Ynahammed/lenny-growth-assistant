@@ -33,10 +33,11 @@ services:
     ports:
       - "8001:8001"
     environment:
+      # Compose-specific overrides ONLY. Everything else (LLM_PROVIDER,
+      # GROQ_API_KEY, GEMINI_API_KEY, model names...) comes from backend/.env
+      # via env_file — values here would override it with host-resolved
+      # empties and silently break cloud providers.
       DATABASE_URL: postgresql+psycopg://lenny:lenny@db:5432/lenny_growth
-      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
     env_file:
       - backend/.env

@@ -12,7 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# CPU-only torch first: sentence-transformers would otherwise pull the full
+# CUDA stack (several GB) that this container never uses — inference is CPU.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Pre-download embedding + reranking models at build time so the first
 # request doesn't pay ~15s of model load inside the container.
